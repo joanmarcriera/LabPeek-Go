@@ -369,14 +369,42 @@ func (s *server) discoveryPage(w http.ResponseWriter, r *http.Request) {
 	networkSettings := s.mustNetworkSettings(r.Context())
 
 	var body strings.Builder
-	body.WriteString(`<section class="toolbar-row"><h1>Scan Queue</h1><div class="toolbar-actions"><span class="button ghost disabled">Schedule</span><a class="button" href="#run-form">+ Add IP</a></div></section>`)
-	body.WriteString(`<section class="kpis">`)
-	body.WriteString(kpiCard("Pending", fmt.Sprintf("%d", pending), "neutral"))
-	body.WriteString(kpiCard("Running", fmt.Sprintf("%d", running), "good"))
-	body.WriteString(kpiCard("Done", fmt.Sprintf("%d", done), "neutral"))
-	body.WriteString(`</section>`)
+	body.WriteString(`<section class="toolbar-row"><h1>Scan Queue</h1><div class="toolbar-actions"><span class="button ghost disabled">Schedule</span><a class="button primary" href="#run-form">+ Add IP</a></div></section>`)
+
+	// 3-col summary strip
+	runningCls := "kpi-col"
+	if running > 0 {
+		runningCls += " running-col"
+	}
+	body.WriteString(`<div class="kpi-row-3">`)
+	body.WriteString(fmt.Sprintf(`<div class="kpi-col"><span class="n warn">%d</span><span class="l">Pending</span></div>`, pending))
+	body.WriteString(fmt.Sprintf(`<div class="%s"><span class="n good">%d</span><span class="l">Running</span></div>`, runningCls, running))
+	body.WriteString(fmt.Sprintf(`<div class="kpi-col"><span class="n" style="color:var(--muted)">%d</span><span class="l">Done</span></div>`, done))
+	body.WriteString(`</div>`)
+
+	// Running job card
+	if runningRun != nil {
+		hostPct := 0
+		if runningRun.HostsFound > 0 {
+			hostPct = 50 // approximate until real progress is tracked
+		}
+		body.WriteString(`<div class="running-card">`)
+		body.WriteString(`<div class="rc-head"><div class="rc-dot"></div>`)
+		body.WriteString(fmt.Sprintf(`<span class="rc-target">%s</span><span class="badge info">%s</span></div>`,
+			template.HTMLEscapeString(runningRun.Target),
+			template.HTMLEscapeString(profileLabel(runningRun.Profile)),
+		))
+		body.WriteString(fmt.Sprintf(`<div class="progress-bar"><div class="progress-fill" style="width:%d%%"></div></div>`, hostPct))
+		body.WriteString(fmt.Sprintf(`<div class="rc-meta">%d hosts found · %d services · started %s</div>`,
+			runningRun.HostsFound, runningRun.ServicesFound,
+			template.HTMLEscapeString(timeLabel(runningRun.CreatedAt)),
+		))
+		body.WriteString(`</div>`)
+	}
 
 	body.WriteString(`<section class="grid two">`)
+
+	// Add job form
 	body.WriteString(`<article class="panel">`)
 	body.WriteString(`<div class="panel-head"><h2>Run Discovery</h2><span class="muted">Manual queue entry</span></div>`)
 	body.WriteString(`<form id="run-form" method="post" action="/discovery/run" class="stack-form">`)
@@ -397,41 +425,40 @@ func (s *server) discoveryPage(w http.ResponseWriter, r *http.Request) {
 		))
 	}
 	body.WriteString(`</div>`)
-	body.WriteString(`<p class="queue-note">Starting a discovery only queues the work. The browser returns immediately, and the run continues in the background while you keep using the UI.</p>`)
-	body.WriteString(`<button type="submit" class="button">Start discovery</button></form>`)
-	if runningRun != nil {
-		body.WriteString(`<div class="queue-card running">`)
-		body.WriteString(fmt.Sprintf(`<strong>%s</strong><p>%s · %d hosts · %d services</p><p class="muted">%s</p>`,
-			template.HTMLEscapeString(runningRun.Target),
-			template.HTMLEscapeString(profileLabel(runningRun.Profile)),
-			runningRun.HostsFound,
-			runningRun.ServicesFound,
-			template.HTMLEscapeString(emptyFallback(runningRun.Logs, "running…")),
-		))
-		body.WriteString(`</div>`)
-	}
+	body.WriteString(`<p class="queue-note">Starting a discovery only queues the work. The browser returns immediately and the run continues in the background.</p>`)
+	body.WriteString(`<button type="submit" class="button primary" style="margin-top:.75rem">Start discovery</button></form>`)
 	body.WriteString(`</article>`)
 
+	// Recent jobs list
 	body.WriteString(`<article class="panel"><div class="panel-head"><h2>Recent Jobs</h2><span class="muted">Pending / running / completed</span></div>`)
 	for _, run := range runs {
+		tone := "warn"
+		switch run.Status {
+		case "completed":
+			tone = "good"
+		case "failed":
+			tone = "bad"
+		case "running":
+			tone = "info"
+		}
+		detail := run.Error
+		if detail == "" {
+			detail = emptyFallback(run.Logs, fmt.Sprintf("%d hosts · %d services", run.HostsFound, run.ServicesFound))
+		}
 		body.WriteString(`<div class="queue-card">`)
-		body.WriteString(fmt.Sprintf(`<div class="queue-line"><strong>%s</strong><span>%s</span></div>`,
-			template.HTMLEscapeString(run.Target),
-			statusBadge(run.Status),
+		body.WriteString(fmt.Sprintf(`<div class="queue-line"><strong class="mono">%s</strong><span class="badge %s">%s</span></div>`,
+			template.HTMLEscapeString(run.Target), tone, template.HTMLEscapeString(strings.ToUpper(run.Status)),
 		))
-		body.WriteString(fmt.Sprintf(`<p>%s · hosts %d · services %d</p>`,
+		body.WriteString(fmt.Sprintf(`<p class="muted" style="font-size:.78rem;margin:.2rem 0 0">%s · %s</p>`,
 			template.HTMLEscapeString(profileLabel(run.Profile)),
-			run.HostsFound,
-			run.ServicesFound,
+			template.HTMLEscapeString(timeLabel(nonZero(run.CompletedAt, run.CreatedAt))),
 		))
-		if run.Error != "" {
-			body.WriteString(fmt.Sprintf(`<p class="bad">%s</p>`, template.HTMLEscapeString(run.Error)))
-		} else if run.Logs != "" {
-			body.WriteString(fmt.Sprintf(`<p class="muted">%s</p>`, template.HTMLEscapeString(run.Logs)))
+		if detail != "" && detail != "0 hosts · 0 services" {
+			body.WriteString(fmt.Sprintf(`<p class="muted" style="font-size:.78rem;margin:.1rem 0 0">%s</p>`, template.HTMLEscapeString(detail)))
 		}
 		body.WriteString(`</div>`)
 	}
-	body.WriteString(`<p class="queue-note">Auto-enrichment note: new hosts can be re-queued for deeper phases later. Vulnerability scans remain manual/scheduled work.</p>`)
+	body.WriteString(`<p class="queue-note" style="font-size:.75rem">Auto-enrichment: new hosts discovered by ping/ARP are automatically queued for OS → Service detection. Vulnerability scans are manual only.</p>`)
 	body.WriteString(`</article></section>`)
 
 	renderPage(w, s.deps.AppName, pageMeta{
