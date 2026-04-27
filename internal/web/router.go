@@ -566,26 +566,28 @@ func runTimelineItem(run models.DiscoveryRun) string {
 }
 
 func phaseBar(asset models.Asset, serviceCount int) string {
-	segments := []struct {
-		Label string
-		Tone  string
-	}{
-		{Label: "Ping", Tone: "done"},
-		{Label: "ARP", Tone: toneIf(asset.PrimaryMAC != "", "done", "active")},
-		{Label: "Ports", Tone: toneIf(serviceCount > 0, "done", "active")},
-		{Label: "OS", Tone: toneIf(asset.DiscoveredDataJSON != "" && strings.Contains(strings.ToLower(asset.DiscoveredDataJSON), "os"), "done", "")},
-		{Label: "Svcs", Tone: toneIf(serviceCount > 0, "done", "active")},
-		{Label: "Vuln", Tone: ""},
+	type seg struct{ label, tone string }
+	segs := []seg{
+		{"Ping", "done"},
+		{"ARP", toneIf(asset.PrimaryMAC != "", "done", "active")},
+		{"Ports", toneIf(serviceCount > 0, "done", "active")},
+		{"OS", toneIf(asset.DiscoveredDataJSON != "" && strings.Contains(strings.ToLower(asset.DiscoveredDataJSON), "os"), "done", "")},
+		{"Svcs", toneIf(serviceCount > 0, "done", "active")},
+		{"Vuln", ""},
 	}
 
 	var out strings.Builder
 	out.WriteString(`<div class="phase">`)
-	for _, segment := range segments {
-		className := segment.Tone
-		if className != "" {
-			className = " " + className
+	for _, s := range segs {
+		cls := "phase-seg"
+		if s.tone != "" {
+			cls += " " + s.tone
 		}
-		out.WriteString(fmt.Sprintf(`<span class="%s">%s</span>`, strings.TrimSpace(className), template.HTMLEscapeString(segment.Label)))
+		out.WriteString(fmt.Sprintf(`<div class="%s" title="%s"></div>`, cls, template.HTMLEscapeString(s.label)))
+	}
+	out.WriteString(`</div><div class="phase-labels">`)
+	for _, s := range segs {
+		out.WriteString(fmt.Sprintf(`<span class="%s">%s</span>`, s.tone, template.HTMLEscapeString(s.label)))
 	}
 	out.WriteString(`</div>`)
 	return out.String()
