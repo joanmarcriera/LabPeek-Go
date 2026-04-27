@@ -206,18 +206,19 @@ func (s *server) assetsPage(w http.ResponseWriter, r *http.Request) {
 	}
 	body.WriteString(`</div>`)
 
-	body.WriteString(`<section class="panel"><table><thead><tr><th>IP</th><th>Host / Label</th><th>Vendor</th><th>Pipeline</th><th>Status</th></tr></thead><tbody>`)
+	body.WriteString(`<section class="panel" style="margin-top:.75rem"><table><thead><tr><th style="width:18px"></th><th>IP</th><th>Host / Label</th><th>Vendor</th><th>Pipeline</th><th>Badges</th></tr></thead><tbody>`)
 	for _, asset := range assets {
 		body.WriteString(`<tr>`)
-		body.WriteString(fmt.Sprintf(`<td class="mono">%s</td>`, template.HTMLEscapeString(asset.PrimaryIP)))
-		body.WriteString(fmt.Sprintf(`<td><a href="/assets/%s">%s</a><div class="muted">%s</div></td>`,
+		body.WriteString(fmt.Sprintf(`<td style="padding-right:0">%s</td>`, statusDot(asset.Status)))
+		body.WriteString(fmt.Sprintf(`<td class="mono" style="font-weight:700">%s</td>`, template.HTMLEscapeString(asset.PrimaryIP)))
+		body.WriteString(fmt.Sprintf(`<td><a href="/assets/%s">%s</a><div class="muted" style="font-size:.72rem">%s</div></td>`,
 			template.HTMLEscapeString(asset.ID),
 			template.HTMLEscapeString(asset.DisplayName),
 			template.HTMLEscapeString(emptyFallback(asset.DiscoveredName, "pending...")),
 		))
-		body.WriteString(fmt.Sprintf(`<td>%s</td>`, template.HTMLEscapeString(emptyFallback(asset.MACVendor, "Unknown"))))
+		body.WriteString(fmt.Sprintf(`<td style="color:var(--muted)">%s</td>`, template.HTMLEscapeString(emptyFallback(asset.MACVendor, "Unknown"))))
 		body.WriteString(fmt.Sprintf(`<td>%s</td>`, phaseBar(asset, serviceCounts[asset.ID])))
-		body.WriteString(fmt.Sprintf(`<td>%s %s</td>`, statusDot(asset.Status), assetBadges(asset)))
+		body.WriteString(fmt.Sprintf(`<td>%s</td>`, assetBadges(asset)))
 		body.WriteString(`</tr>`)
 	}
 	body.WriteString(`</tbody></table></section>`)
@@ -662,11 +663,14 @@ func phaseSection(asset models.Asset, serviceCount int) string {
 }
 
 func statusDot(status string) string {
-	className := "status-dot"
-	if strings.EqualFold(status, "down") || strings.EqualFold(status, "offline") {
-		className += " bad"
+	cls := "status-dot"
+	switch {
+	case strings.EqualFold(status, "down"), strings.EqualFold(status, "offline"):
+		cls += " bad"
+	case strings.EqualFold(status, "queued"), strings.EqualFold(status, "running"):
+		cls += " warn"
 	}
-	return `<span class="` + className + `"></span>`
+	return `<span class="` + cls + `"></span>`
 }
 
 func statusBadge(status string) string {
