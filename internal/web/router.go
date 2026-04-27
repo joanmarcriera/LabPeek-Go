@@ -69,59 +69,116 @@ func NewRouter(deps Dependencies) http.Handler {
 	return r
 }
 
+var validWindows = []string{"1h", "4h", "12h", "24h", "7d"}
+
+func parseWindow(r *http.Request) (string, time.Duration) {
+	switch r.URL.Query().Get("w") {
+	case "1h":
+		return "1h", 1 * time.Hour
+	case "4h":
+		return "4h", 4 * time.Hour
+	case "12h":
+		return "12h", 12 * time.Hour
+	case "7d":
+		return "7d", 7 * 24 * time.Hour
+	default:
+		return "24h", 24 * time.Hour
+	}
+}
+
+func pluralS(n int) string {
+	if n == 1 {
+		return ""
+	}
+	return "S"
+}
+
 func (s *server) dashboard(w http.ResponseWriter, r *http.Request) {
 	assets, _ := s.deps.Assets.List(r.Context())
 	services, _ := s.deps.Services.List(r.Context())
-	runs, _ := s.deps.Runs.ListRecent(r.Context(), 12)
+	runs, _ := s.deps.Runs.ListRecent(r.Context(), 30)
+
+	winKey, winDur := parseWindow(r)
 
 	newCount := 0
 	changedCount := 0
 	offlineCount := 0
 	inQueueCount := countRunsByStatus(runs, "queued") + countRunsByStatus(runs, "running")
-	recentAssets := newestAssets(assets, 5)
-	for _, asset := range assets {
-		if isRecent(asset.CreatedAt, 24*time.Hour) || isRecent(asset.FirstSeenAt, 24*time.Hour) {
+	serviceCounts := serviceCountByAsset(services)
+
+	var newAssets []models.Asset
+	for _, a := range assets {
+		if isRecent(nonZero(a.FirstSeenAt, a.CreatedAt), winDur) {
+			newAssets = append(newAssets, a)
 			newCount++
 		}
-		if !asset.UpdatedAt.IsZero() && asset.UpdatedAt.After(asset.CreatedAt.Add(time.Minute)) {
+		if !a.UpdatedAt.IsZero() && a.UpdatedAt.After(a.CreatedAt.Add(time.Minute)) && isRecent(a.UpdatedAt, winDur) {
 			changedCount++
 		}
-		if strings.EqualFold(asset.Status, "down") || strings.EqualFold(asset.Status, "offline") {
+		if strings.EqualFold(a.Status, "down") || strings.EqualFold(a.Status, "offline") {
 			offlineCount++
 		}
 	}
 
-	serviceCounts := serviceCountByAsset(services)
-
 	var body strings.Builder
+
+	// KPI strip
 	body.WriteString(`<section class="kpis">`)
 	body.WriteString(kpiCard("Devices", fmt.Sprintf("%d", len(assets)), "neutral"))
 	body.WriteString(kpiCard("New", fmt.Sprintf("%d", newCount), "good"))
 	body.WriteString(kpiCard("Changed", fmt.Sprintf("%d", changedCount), "warn"))
 	body.WriteString(kpiCard("Offline", fmt.Sprintf("%d", offlineCount), "bad"))
-	body.WriteString(kpiCard("In queue", fmt.Sprintf("%d", inQueueCount), "neutral"))
+	body.WriteString(kpiCard("In queue", fmt.Sprintf("%d", inQueueCount), "info"))
 	body.WriteString(`</section>`)
 
-	body.WriteString(`<section class="grid two">`)
-	body.WriteString(`<article class="panel"><div class="panel-head"><h2>New Devices</h2><span class="muted">Recent discoveries</span></div>`)
-	if len(recentAssets) == 0 {
-		body.WriteString(`<p class="muted">No devices discovered yet.</p>`)
-	} else {
-		for _, asset := range recentAssets {
-			body.WriteString(assetRowCard(asset, serviceCounts[asset.ID]))
+	// Time window strip
+	body.WriteString(`<div class="window-row"><span class="win-label">Window</span>`)
+	for _, win := range validWindows {
+		cls := "win-tag"
+		if win == winKey {
+			cls += " active"
 		}
+		body.WriteString(fmt.Sprintf(`<a class="%s" href="/?w=%s">%s</a>`, cls, win, win))
 	}
-	body.WriteString(`</article>`)
+	body.WriteString(`</div>`)
 
-	body.WriteString(`<article class="panel"><div class="panel-head"><h2>Changes Detected</h2><span class="muted">Recent run activity</span></div>`)
+	// Alert banners (shown only when non-zero)
+	if newCount > 0 {
+		body.WriteString(fmt.Sprintf(
+			`<div class="alert-banner green"><span class="ab-label">%d NEW DEVICE%s</span><span>in last %s</span><a class="ab-link" href="/assets">View ›</a></div>`,
+			newCount, pluralS(newCount), winKey,
+		))
+	}
+	if changedCount > 0 {
+		body.WriteString(fmt.Sprintf(
+			`<div class="alert-banner amber"><span class="ab-label">%d CHANGE%s</span><span>in last %s</span><a class="ab-link" href="/assets">View ›</a></div>`,
+			changedCount, pluralS(changedCount), winKey,
+		))
+	}
+
+	// New devices section
+	body.WriteString(`<div class="sec-hd" style="margin:0 0 .5rem">▲ New devices — last ` + winKey + `</div>`)
+	if len(newAssets) == 0 {
+		body.WriteString(`<p class="tl-empty">No new devices in this window.</p>`)
+	} else {
+		body.WriteString(`<div class="panel" style="margin-bottom:.75rem">`)
+		for _, a := range newAssets {
+			body.WriteString(assetRowCard(a, serviceCounts[a.ID]))
+		}
+		body.WriteString(`</div>`)
+	}
+
+	// Activity timeline
+	body.WriteString(`<div class="sec-hd" style="margin:0 0 .5rem">⚡ Activity — recent scans &amp; events</div>`)
+	body.WriteString(`<div class="panel">`)
 	if len(runs) == 0 {
-		body.WriteString(`<p class="muted">No discovery activity yet.</p>`)
+		body.WriteString(`<p class="tl-empty">No activity yet.</p>`)
 	} else {
 		for _, run := range runs {
 			body.WriteString(runTimelineItem(run))
 		}
 	}
-	body.WriteString(`</article></section>`)
+	body.WriteString(`</div>`)
 
 	renderPage(w, s.deps.AppName, pageMeta{
 		Title:   "Dashboard",
@@ -546,20 +603,27 @@ func assetRowCard(asset models.Asset, serviceCount int) string {
 
 func runTimelineItem(run models.DiscoveryRun) string {
 	tone := "warn"
-	if run.Status == "completed" {
-		tone = "good"
-	} else if run.Status == "failed" {
-		tone = "bad"
+	badge := "CHG"
+	switch run.Status {
+	case "completed":
+		tone, badge = "good", "SCAN"
+	case "running":
+		tone, badge = "info", "RUN"
+	case "failed":
+		tone, badge = "bad", "ERR"
 	}
 	detail := run.Error
 	if detail == "" {
-		detail = emptyFallback(run.Logs, fmt.Sprintf("%d hosts, %d services", run.HostsFound, run.ServicesFound))
+		if run.HostsFound > 0 || run.ServicesFound > 0 {
+			detail = fmt.Sprintf("%d hosts · %d services", run.HostsFound, run.ServicesFound)
+		} else {
+			detail = emptyFallback(run.Logs, profileLabel(run.Profile))
+		}
 	}
-	return fmt.Sprintf(`<div class="timeline-item"><div class="queue-line"><span class="badge %s">%s</span><span class="muted">%s</span></div><p><strong>%s</strong> · %s</p><p class="muted">%s</p></div>`,
-		tone,
-		template.HTMLEscapeString(strings.ToUpper(run.Status)),
+	return fmt.Sprintf(
+		`<div class="tl-item"><span class="tl-time">%s</span><span class="badge %s">%s</span><span class="tl-ip">%s</span><span class="tl-text">%s</span></div>`,
 		template.HTMLEscapeString(timeLabel(nonZero(run.CompletedAt, run.CreatedAt))),
-		template.HTMLEscapeString(profileLabel(run.Profile)),
+		tone, badge,
 		template.HTMLEscapeString(run.Target),
 		template.HTMLEscapeString(detail),
 	)
