@@ -1,0 +1,20 @@
+.gocache/
+.gomodcache/
+bin/
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# Compiled binary
+/labpeek
+
+# AI assistant config / scratch (per-tool, not project source)
+.agents/
+.augment/
+.claude/
+.codebuddy/
+.codex/
+.continue/
+.junie/
+.kiro/
+.playwright-mcp/

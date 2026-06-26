@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<?xml-stylesheet href="file:///usr/bin/../share/nmap/nmap.xsl" type="text/xsl"?>
+<!-- Nmap 7.94 scan initiated Mon Apr 27 22:45:02 2026 as: nmap -T4 -n -PS22,80,443,445,8080,8443 -&#45;max-hostgroup 1 -&#45;max-retries 2 -&#45;top-ports 20 -&#45;open -&#45;host-timeout 10s -oX /app/data/discovery/1777329902954232422.xml 192.168.0.4/30 -->
+<nmaprun scanner="nmap" args="nmap -T4 -n -PS22,80,443,445,8080,8443 -&#45;max-hostgroup 1 -&#45;max-retries 2 -&#45;top-ports 20 -&#45;open -&#45;host-timeout 10s -oX /app/data/discovery/1777329902954232422.xml 192.168.0.4/30" start="1777329902" startstr="Mon Apr 27 22:45:02 2026" version="7.94" xmloutputversion="1.05">
+<scaninfo type="syn" protocol="tcp" numservices="20" services="21-23,25,53,80,110-111,135,139,143,443,445,993,995,1723,3306,3389,5900,8080"/>
+<verbose level="0"/>
+<debugging level="0"/>
+<hosthint><status state="up" reason="unknown-response" reason_ttl="0"/>
+<address addr="192.168.0.5" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="unknown-response" reason_ttl="0"/>
+<address addr="192.168.0.4" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<runstats><finished time="1777329907" timestr="Mon Apr 27 22:45:07 2026" summary="Nmap done at Mon Apr 27 22:45:07 2026; 4 IP addresses (2 hosts up) scanned in 4.36 seconds" elapsed="4.36" exit="success"/><hosts up="2" down="2" total="4"/>
+</runstats>
+</nmaprun>

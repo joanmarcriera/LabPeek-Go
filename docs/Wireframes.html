@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LabPeek-Go Wireframes</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <style>* { box-sizing: border-box; margin: 0; padding: 0; } body { background: #d8d8d8; }</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+/* ─── TOKENS ───────────────────────────── */
+const L = { // light theme
+  bg:'#ffffff', bg2:'#f4f4f4', bg3:'#ebebeb',
+  border:'#d0d0d0', text:'#1a1a1a', dim:'#555', xdim:'#999',
+  green:'#1a7a4a', greenBg:'#e6f4ed', greenBorder:'#a8d9bf',
+  amber:'#a05500', amberBg:'#fdf0e0', amberBorder:'#f0c070',
+  red:'#b81c1c',   redBg:'#fce8e8',   redBorder:'#f0a0a0',
+  blue:'#1a4a8a',  blueBg:'#e6eef8',  blueBorder:'#a0bce0',
+  gray:'#888',     grayBg:'#ebebeb',  grayBorder:'#d0d0d0',
+  mono:"'IBM Plex Mono',monospace", sans:"'IBM Plex Sans',sans-serif",
+};
+const D = { // dark theme
+  bg:'#141414', bg2:'#1e1e1e', bg3:'#2a2a2a',
+  border:'#333', text:'#e8e8e8', dim:'#aaa', xdim:'#666',
+  green:'#3ecf7a', greenBg:'#0d2e1a', greenBorder:'#1a5c32',
+  amber:'#f0a030', amberBg:'#2a1e08', amberBorder:'#6a4010',
+  red:'#f05050',   redBg:'#2a0e0e',   redBorder:'#6a1c1c',
+  blue:'#5090e0',  blueBg:'#0e1e3a',  blueBorder:'#1a3a6a',
+  gray:'#666',     grayBg:'#2a2a2a',  grayBorder:'#444',
+  mono:"'IBM Plex Mono',monospace", sans:"'IBM Plex Sans',sans-serif",
+};
+
+/* ─── PRIMITIVES ──────────────────────── */
+const Row = ({children,style={}}) => <div style={{display:'flex',alignItems:'center',...style}}>{children}</div>;
+const Col = ({children,style={}}) => <div style={{display:'flex',flexDirection:'column',...style}}>{children}</div>;
+
+const Badge = ({c='green',t,children,style={}}) => {
+  const map = {green:[L.greenBg,L.green,L.greenBorder],amber:[L.amberBg,L.amber,L.amberBorder],red:[L.redBg,L.red,L.redBorder],blue:[L.blueBg,L.blue,L.blueBorder],gray:[L.grayBg,L.dim,L.grayBorder]};
+  const [bg,color,border] = map[c]||map.gray;
+  return <span style={{fontFamily:L.mono,fontSize:9,fontWeight:600,padding:'1px 5px',borderRadius:2,border:`1px solid ${border}`,background:bg,color,whiteSpace:'nowrap',...style}}>{children}</span>;
+};
+const DBadge = ({c='green',children,style={}}) => {
+  const map = {green:[D.greenBg,D.green,D.greenBorder],amber:[D.amberBg,D.amber,D.amberBorder],red:[D.redBg,D.red,D.redBorder],blue:[D.blueBg,D.blue,D.blueBorder],gray:[D.grayBg,D.dim,D.grayBorder]};
+  const [bg,color,border] = map[c]||map.gray;
+  return <span style={{fontFamily:D.mono,fontSize:9,fontWeight:600,padding:'1px 5px',borderRadius:2,border:`1px solid ${border}`,background:bg,color,whiteSpace:'nowrap',...style}}>{children}</span>;
+};
+
+const Btn = ({children,primary=false,sm=false,dark=false,style={}}) => {
+  const T = dark?D:L;
+  return <div style={{fontFamily:T.mono,fontSize:sm?9:11,fontWeight:600,padding:sm?'3px 7px':'5px 12px',borderRadius:3,border:`1.5px solid ${primary?T.text:T.border}`,background:primary?T.text:T.bg,color:primary?T.bg:T.text,cursor:'pointer',whiteSpace:'nowrap',...style}}>{children}</div>;
+};
+
+const Tag = ({children,active=false,dark=false}) => {
+  const T = dark?D:L;
+  return <span style={{fontFamily:T.mono,fontSize:9,padding:'2px 7px',borderRadius:2,border:`1px solid ${active?T.text:T.border}`,background:active?T.text:T.bg,color:active?T.bg:T.dim,cursor:'pointer',whiteSpace:'nowrap'}}>{children}</span>;
+};
+
+const Div = ({dark=false}) => <div style={{height:1,background:dark?D.border:L.border}}/>;
+
+const SecHd = ({label,dark=false}) => {
+  const T = dark?D:L;
+  return <div style={{fontFamily:T.mono,fontSize:8,fontWeight:700,color:T.xdim,padding:'5px 12px 3px',letterSpacing:.8,textTransform:'uppercase',background:T.bg2,borderBottom:`1px solid ${T.border}`,flexShrink:0}}>{label}</div>;
+};
+
+const Dot = ({status,size=7}) => {
+  const c = {up:L.green,down:L.red,unknown:L.gray}[status]||L.gray;
+  return <div style={{width:size,height:size,borderRadius:'50%',background:c,flexShrink:0}}/>;
+};
+const DDot = ({status,size=7}) => {
+  const c = {up:D.green,down:D.red,unknown:D.gray}[status]||D.gray;
+  return <div style={{width:size,height:size,borderRadius:'50%',background:c,flexShrink:0}}/>;
+};
+
+const IP = ({addr,dark=false}) => <span style={{fontFamily:(dark?D:L).mono,fontSize:10,color:(dark?D:L).dim}}>{addr}</span>;
+
+/* pipeline phases */
+const PHASES = ['Ping','ARP','Ports','OS','Svcs','Vuln'];
+const PipelineBadge = ({done=0,dark=false}) => {
+  const T = dark?D:L;
+  return (
+    <Row style={{gap:2}}>
+      {PHASES.map((p,i) => {
+        const isDone = i < done;
+        const isActive = i === done;
+        return (
+          <div key={p} style={{fontFamily:T.mono,fontSize:7,padding:'1px 4px',borderRadius:2,
+            background: isDone ? T.green : isActive ? T.amber : T.bg3,
+            color: isDone ? '#fff' : isActive ? '#fff' : T.xdim,
+            border: `1px solid ${isDone ? T.greenBorder||T.green : isActive ? T.amberBorder||T.amber : T.border}`,
+            opacity: i > done+1 ? 0.5 : 1,
+          }}>{p}</div>
+        );
+      })}
+    </Row>
+  );
+};
+
+/* status bar */
+const StatusBar = ({dark=false}) => {
+  const T = dark?D:L;
+  return <div style={{height:22,background:dark?'#000':'#1a1a1a',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 16px',flexShrink:0}}>
+    <span style={{fontFamily:T.mono,fontSize:9,color:'#fff',fontWeight:600}}>9:41</span>
+    <span style={{fontFamily:T.mono,fontSize:9,color:'#fff'}}>▮▮▮ 84%</span>
+  </div>;
+};
+
+const Phone = ({children,dark=false}) => {
+  const T = dark?D:L;
+  return <div style={{width:390,height:780,border:`2.5px solid ${dark?'#444':'#1a1a1a'}`,borderRadius:28,overflow:'hidden',background:T.bg,display:'flex',flexDirection:'column',fontFamily:T.sans}}>{children}</div>;
+};
+
+const BottomNav = ({active,dark=false}) => {
+  const T = dark?D:L;
+  return <div style={{borderTop:`1.5px solid ${T.border}`,display:'flex',flexShrink:0,background:T.bg}}>
+    {[{id:'dash',label:'Home',ico:'⊞'},{id:'devices',label:'Devices',ico:'⊡'},{id:'queue',label:'Queue',ico:'≡'},{id:'settings',label:'Settings',ico:'⚙'}].map(n=>(
+      <div key={n.id} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',padding:'5px 0 8px',gap:1,opacity:n.id===active?1:0.35}}>
+        <span style={{fontSize:16,fontFamily:T.mono}}>{n.ico}</span>
+        <span style={{fontFamily:T.mono,fontSize:8,color:n.id===active?T.text:T.dim,fontWeight:n.id===active?700:400}}>{n.label}</span>
+        {n.id===active && <div style={{width:20,height:2,background:T.green,borderRadius:1}}/>}
+      </div>
+    ))}
+  </div>;
+};
+
+/* Network selector pill */
+const NetSelector = ({dark=false}) => {
+  const T = dark?D:L;
+  return <Row style={{gap:4,border:`1px solid ${T.border}`,borderRadius:4,padding:'3px 8px 3px 6px',background:T.bg2,cursor:'pointer'}}>
+    <div style={{width:7,height:7,borderRadius:'50%',background:T.green}}/>
+    <span style={{fontFamily:T.mono,fontSize:10,color:T.text,fontWeight:600}}>Home Lab</span>
+    <span style={{fontFamily:T.mono,fontSize:9,color:T.xdim,marginLeft:2}}>▾</span>
+  </Row>;
+};
+
+/* Tiny availability bar (30 slots = 30 days) */
+const AvailBar = ({data,dark=false}) => {
+  const T = dark?D:L;
+  return <Row style={{gap:1,flexWrap:'nowrap'}}>
+    {data.map((v,i) => (
+      <div key={i} style={{flex:1,height:16,background:v===1?T.green:v===0?T.red:T.bg3,borderRadius:1,minWidth:4}}/>
+    ))}
+  </Row>;
+};
+
+/* ════════════════════════════════════════
+   DASHBOARD V1 — Light, cards + alerts
+════════════════════════════════════════ */
+const DashV1 = () => (
+  <Phone>
+    <StatusBar/>
+    <Row style={{padding:'7px 12px',borderBottom:`1.5px solid ${L.border}`,gap:8,flexShrink:0,background:L.bg}}>
+      <span style={{fontFamily:L.mono,fontSize:13,fontWeight:700,letterSpacing:-0.5}}>LabPeek<span style={{color:L.green}}>-Go</span></span>
+      <NetSelector/>
+      <div style={{flex:1}}/>
+      <Btn sm primary>⟳ Scan</Btn>
+    </Row>
+    {/* KPI row */}
+    <Row style={{borderBottom:`1px solid ${L.border}`,flexShrink:0}}>
+      {[{n:'31',l:'Devices',c:'text'},{n:'2',l:'New',c:'green'},{n:'5',l:'Changed',c:'amber'},{n:'1',l:'Offline',c:'red'},{n:'3',l:'In queue',c:'blue'}].map((k,i,a)=>(
+        <Col key={i} style={{flex:1,padding:'7px 0',alignItems:'center',borderRight:i<a.length-1?`1px solid ${L.border}`:'none',background:{green:L.greenBg,amber:L.amberBg,red:L.redBg,blue:L.blueBg,text:L.bg}[k.c]}}>
+          <span style={{fontFamily:L.mono,fontSize:20,fontWeight:700,color:{green:L.green,amber:L.amber,red:L.red,blue:L.blue,text:L.text}[k.c]}}>{k.n}</span>
+          <span style={{fontFamily:L.mono,fontSize:8,color:L.dim}}>{k.l}</span>
+        </Col>
+      ))}
+    </Row>
+
+    <div style={{flex:1,overflowY:'hidden',display:'flex',flexDirection:'column'}}>
+      {/* NEW DEVICES */}
+      <SecHd label="▲ New devices — last 6h"/>
+      {[
+        {ip:'192.168.1.47',vendor:'Raspberry Pi',mac:'DC:A6:32:xx',ago:'14m',phase:1},
+        {ip:'192.168.1.103',vendor:'Unknown',mac:'B8:27:EB:xx',ago:'2h 4m',phase:3},
+      ].map((d,i)=>(
+        <div key={i} style={{background:d.phase<3?L.greenBg:L.bg}}>
+          <Row style={{padding:'6px 12px',gap:8}}>
+            <Dot status="up"/>
+            <Col style={{flex:1,minWidth:0,gap:2}}>
+              <Row style={{gap:6}}>
+                <span style={{fontFamily:L.mono,fontSize:11,fontWeight:700}}>{d.ip}</span>
+                <Badge c="green">NEW</Badge>
+              </Row>
+              <span style={{fontFamily:L.mono,fontSize:9,color:L.dim}}>{d.vendor} · {d.mac}</span>
+              <PipelineBadge done={d.phase}/>
+            </Col>
+            <span style={{fontFamily:L.mono,fontSize:9,color:L.xdim}}>{d.ago}</span>
+            <span style={{color:L.xdim}}>›</span>
+          </Row>
+          <Div/>
+        </div>
+      ))}
+
+      {/* CHANGES */}
+      <SecHd label="⚡ Changes — last 6h"/>
+      {[
+        {ip:'192.168.1.12',what:'Port 22 opened',ago:'18m',c:'amber'},
+        {ip:'192.168.1.5', what:'Hostname changed → nas-v2',ago:'44m',c:'amber'},
+        {ip:'192.168.1.9', what:'OS fingerprint changed',ago:'1h 3m',c:'amber'},
+        {ip:'192.168.1.31',what:'Port 8080 opened',ago:'1h 51m',c:'amber'},
+        {ip:'192.168.1.201',what:'Host went offline',ago:'3h 20m',c:'red'},
+      ].map((e,i)=>(
+        <div key={i}>
+          <Row style={{padding:'5px 12px',gap:8}}>
+            <div style={{width:6,height:6,borderRadius:2,background:{amber:L.amber,red:L.red}[e.c],flexShrink:0}}/>
+            <IP addr={e.ip}/>
+            <span style={{fontFamily:L.sans,fontSize:10,color:L.text,flex:1,marginLeft:4}}>{e.what}</span>
+            <span style={{fontFamily:L.mono,fontSize:9,color:L.xdim,whiteSpace:'nowrap'}}>{e.ago}</span>
+            <span style={{color:L.xdim,fontSize:11}}>›</span>
+          </Row>
+          <Div/>
+        </div>
+      ))}
+    </div>
+    <BottomNav active="dash"/>
+  </Phone>
+);
+
+/* ════════════════════════════════════════
+   DASHBOARD V2 — Dark, time window + timeline
+════════════════════════════════════════ */
+const DashV2 = () => (
+  <Phone dark>
+    <StatusBar dark/>
+    <Row style={{padding:'7px 12px',borderBottom:`1.5px solid ${D.border}`,gap:8,flexShrink:0}}>
+      <span style={{fontFamily:D.mono,fontSize:13,fontWeight:700,letterSpacing:-0.5,color:D.text}}>LabPeek<span style={{color:D.green}}>-Go</span></span>
+      <NetSelector dark/>
+      <div style={{flex:1}}/>
+      <Btn sm primary dark>+ Scan</Btn>
+    </Row>
+    {/* time window */}
+    <Row style={{padding:'5px 12px',borderBottom:`1px solid ${D.border}`,flexShrink:0,background:D.bg2,gap:4}}>
+      <span style={{fontFamily:D.mono,fontSize:8,color:D.xdim,marginRight:4}}>WINDOW</span>
+      {['1h','4h','12h','24h','7d'].map((t,i)=><Tag key={t} active={i===2} dark>{t}</Tag>)}
+    </Row>
+    {/* alert banners */}
+    <div style={{background:D.greenBg,borderBottom:`1px solid ${D.greenBorder}`,padding:'5px 12px',flexShrink:0}}>
+      <Row style={{gap:8}}>
+        <span style={{fontFamily:D.mono,fontSize:10,fontWeight:700,color:D.green}}>2 NEW DEVICES</span>
+        <span style={{fontFamily:D.mono,fontSize:9,color:D.green}}>in last 12h</span>
+        <div style={{flex:1}}/>
+        <span style={{fontFamily:D.mono,fontSize:9,color:D.green,textDecoration:'underline'}}>View ›</span>
+      </Row>
+    </div>
+    <div style={{background:D.amberBg,borderBottom:`1px solid ${D.amberBorder}`,padding:'5px 12px',flexShrink:0}}>
+      <Row style={{gap:8}}>
+        <span style={{fontFamily:D.mono,fontSize:10,fontWeight:700,color:D.amber}}>5 CHANGES</span>
+        <span style={{fontFamily:D.mono,fontSize:9,color:D.amber}}>in last 12h</span>
+        <div style={{flex:1}}/>
+        <span style={{fontFamily:D.mono,fontSize:9,color:D.amber,textDecoration:'underline'}}>View ›</span>
+      </Row>
+    </div>
+    {/* network summary bar */}
+    <Row style={{padding:'6px 12px',borderBottom:`1px solid ${D.border}`,gap:10,flexShrink:0,background:D.bg2}}>
+      {[{n:31,l:'total'},{n:29,l:'up'},{n:1,l:'down'},{n:2,l:'new'}].map((s,i)=>(
+        <Row key={i} style={{gap:4}}>
+          <span style={{fontFamily:D.mono,fontSize:11,fontWeight:700,color:i===2?D.red:i===3?D.green:D.text}}>{s.n}</span>
+          <span style={{fontFamily:D.mono,fontSize:8,color:D.xdim}}>{s.l}</span>
+        </Row>
+      ))}
+      <div style={{flex:1}}/>
+      <span style={{fontFamily:D.mono,fontSize:8,color:D.xdim}}>last scan: 4m ago</span>
+    </Row>
+    {/* activity timeline */}
+    <SecHd label="Activity timeline" dark/>
+    <div style={{flex:1,overflowY:'hidden'}}>
+      {[
+        {time:'09:23',type:'new',   ip:'192.168.1.47', detail:'New device (Raspberry Pi)'},
+        {time:'09:05',type:'change',ip:'192.168.1.12', detail:'Port 22 opened'},
+        {time:'08:41',type:'new',   ip:'192.168.1.103',detail:'New device (Unknown vendor)'},
+        {time:'08:17',type:'change',ip:'192.168.1.5',  detail:'Hostname → nas-v2'},
+        {time:'08:02',type:'down',  ip:'192.168.1.201',detail:'Host went offline'},
+        {time:'07:50',type:'change',ip:'192.168.1.31', detail:'Port 8080 opened'},
+        {time:'07:33',type:'change',ip:'192.168.1.9',  detail:'OS fingerprint changed'},
+        {time:'07:12',type:'scan',  ip:'192.168.1.0/24',detail:'Port scan completed'},
+        {time:'06:55',type:'change',ip:'192.168.1.88', detail:'Service Apache 2.4.51 detected'},
+      ].map((e,i)=>(
+        <div key={i}>
+          <Row style={{padding:'5px 12px',gap:8}}>
+            <span style={{fontFamily:D.mono,fontSize:9,color:D.xdim,width:38,flexShrink:0}}>{e.time}</span>
+            <DBadge c={e.type==='new'?'green':e.type==='down'?'red':e.type==='scan'?'blue':'amber'}>
+              {e.type==='new'?'NEW':e.type==='down'?'DOWN':e.type==='scan'?'SCAN':'CHG'}
+            </DBadge>
+            <span style={{fontFamily:D.mono,fontSize:9,color:D.dim,whiteSpace:'nowrap'}}>{e.ip}</span>
+            <span style={{fontFamily:D.sans,fontSize:10,color:D.text,flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.detail}</span>
+            <span style={{color:D.xdim}}>›</span>
+          </Row>
+          <div style={{height:1,background:D.border}}/>
+        </div>
+      ))}
+    </div>
+    <BottomNav active="dash" dark/>
+  </Phone>
+);
+
+/* ════════════════════════════════════════
+   DEVICE LIST — compact table (light)
+════════════════════════════════════════ */
+const DevicesV1 = () => (
+  <Phone>
+    <StatusBar/>
+    <Row style={{padding:'7px 12px',borderBottom:`1.5px solid ${L.border}`,gap:8,flexShrink:0}}>
+      <span style={{fontFamily:L.mono,fontSize:13,fontWeight:700}}>Devices</span>
+      <NetSelector/>
+      <div style={{flex:1}}/>
+      <Btn sm>Filter</Btn>
+      <Btn sm primary>+ Scan</Btn>
+    </Row>
+    {/* subnet tabs */}
+    <Row style={{padding:'4px 12px',gap:4,borderBottom:`1px solid ${L.border}`,flexShrink:0,background:L.bg2}}>
+      {['All (31)','192.168.1.x (25)','10.0.0.x (6)'].map((s,i)=><Tag key={s} active={i===0}>{s}</Tag>)}
+    </Row>
+    {/* col header */}
+    <Row style={{padding:'4px 12px',background:L.bg3,borderBottom:`1px solid ${L.border}`,flexShrink:0}}>
+      {['IP','Host / Label','Vendor','Phase','St.'].map((h,i)=>(
+        <span key={i} style={{fontFamily:L.mono,fontSize:8,fontWeight:700,color:L.xdim,textTransform:'uppercase',flex:[1.5,2,1.5,2.5,0.6][i]}}>{h}</span>
+      ))}
+    </Row>
+    <div style={{flex:1,overflowY:'hidden'}}>
+      {[
+        {ip:'192.168.1.1',  host:'router',      vendor:'TP-Link',      st:'up',   phase:6, isNew:false},
+        {ip:'192.168.1.5',  host:'nas.local',   vendor:'Synology',     st:'up',   phase:6, isNew:false},
+        {ip:'192.168.1.9',  host:'desktop-win', vendor:'Dell',         st:'up',   phase:5, isNew:false},
+        {ip:'192.168.1.12', host:'pi-hole',     vendor:'Raspberry Pi', st:'up',   phase:4, isNew:false},
+        {ip:'192.168.1.47', host:'(unlabeled)', vendor:'Raspberry Pi', st:'up',   phase:1, isNew:true},
+        {ip:'192.168.1.55', host:'macbook',     vendor:'Apple',        st:'up',   phase:6, isNew:false},
+        {ip:'192.168.1.88', host:'(unlabeled)', vendor:'Apple',        st:'up',   phase:2, isNew:true},
+        {ip:'192.168.1.103',host:'(unlabeled)', vendor:'Unknown',      st:'up',   phase:1, isNew:true},
+        {ip:'192.168.1.201',host:'old-laptop',  vendor:'Lenovo',       st:'down', phase:6, isNew:false},
+      ].map((d,i)=>(
+        <div key={i} style={{background:d.isNew?L.greenBg:'#fff'}}>
+          <Row style={{padding:'5px 12px',gap:0}}>
+            <span style={{fontFamily:L.mono,fontSize:10,fontWeight:d.isNew?700:400,flex:1.5,color:d.isNew?L.green:L.text}}>{d.ip}</span>
+            <span style={{fontFamily:L.mono,fontSize:9,flex:2,color:d.host.startsWith('(')?L.xdim:L.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{d.host}</span>
+            <span style={{fontFamily:L.sans,fontSize:9,flex:1.5,color:L.dim,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{d.vendor}</span>
+            <div style={{flex:2.5}}>
+              <div style={{display:'flex',gap:1}}>
+                {PHASES.map((p,pi)=>(
+                  <div key={p} title={p} style={{width:12,height:5,borderRadius:1,background:pi<d.phase?L.green:pi===d.phase&&d.st==='up'?L.amber:L.bg3}}/>
+                ))}
+              </div>
+            </div>
+            <Row style={{flex:0.6,gap:3}}>
+              <Dot status={d.st} size={6}/>
+            </Row>
+          </Row>
+          <Div/>
+        </div>
+      ))}
+    </div>
+    <BottomNav active="devices"/>
+  </Phone>
+);
+
+/* ════════════════════════════════════════
+   DEVICE LIST V2 — Grouped by subnet (dark)
+════════════════════════════════════════ */
+const DevicesV2 = () => (
+  <Phone dark>
+    <StatusBar dark/>
+    <Row style={{padding:'7px 12px',borderBottom:`1.5px solid ${D.border}`,gap:8,flexShrink:0}}>
+      <span style={{fontFamily:D.mono,fontSize:13,fontWeight:700,color:D.text}}>Devices</span>
+      <NetSelector dark/>
+      <div style={{flex:1}}/>
+      <Btn sm dark primary>Scan All</Btn>
+    </Row>
+    <div style={{flex:1,overflowY:'hidden'}}>
+      {/* subnet group 1 */}
+      <Row style={{padding:'5px 12px',background:D.bg3,borderBottom:`1px solid ${D.border}`,gap:8,flexShrink:0}}>
+        <span style={{fontFamily:D.mono,fontSize:9,fontWeight:700,color:D.text}}>192.168.1.0/24</span>
+        <DBadge c="green">25 up</DBadge><DBadge c="red">1 down</DBadge><DBadge c="green">3 new</DBadge>
+        <div style={{flex:1}}/>
+        <span style={{fontFamily:D.mono,fontSize:9,color:D.xdim}}>▾</span>
+      </Row>
+      {[
+        {ip:'192.168.1.1',  host:'router',      vendor:'TP-Link',      st:'up',   phase:6,isNew:false,changed:false},
+        {ip:'192.168.1.12', host:'pi-hole',     vendor:'Raspberry Pi', st:'up',   phase:4,isNew:false,changed:true},
+        {ip:'192.168.1.47', host:'(unlabeled)', vendor:'Raspberry Pi', st:'up',   phase:1,isNew:true,changed:false},
+        {ip:'192.168.1.88', host:'(unlabeled)', vendor:'Apple',        st:'up',   phase:2,isNew:true,changed:false},
+        {ip:'192.168.1.201',host:'old-laptop',  vendor:'Lenovo',       st:'down', phase:6,isNew:false,changed:false},
+      ].map((d,i)=>(
+        <div key={i} style={{background:d.isNew?D.greenBg:D.bg}}>
+          <Row style={{padding:'6px 12px',gap:8}}>
+            <DDot status={d.st}/>
+            <Col style={{flex:1,minWidth:0,gap:3}}>
+              <Row style={{gap:6}}>
+                <span style={{fontFamily:D.mono,fontSize:10,fontWeight:700,color:d.isNew?D.green:D.text}}>{d.ip}</span>
+                {d.isNew && <DBadge c="green">NEW</DBadge>}
+                {d.changed && <DBadge c="amber">CHG</DBadge>}
+              </Row>
+              <Row style={{gap:6}}>
+                <span style={{fontFamily:D.mono,fontSize:9,color:D.dim}}>{d.host}</span>
+                <span style={{fontFamily:D.sans,fontSize:9,color:D.xdim}}>· {d.vendor}</span>
+              </Row>
+              <PipelineBadge done={d.phase} dark/>
+            </Col>
+            <span style={{color:D.xdim}}>›</span>
+          </Row>
+          <div style={{height:1,background:D.border}}/>
+        </div>
+      ))}
+      {/* subnet group 2 */}
+      <Row style={{padding:'5px 12px',background:D.bg3,borderBottom:`1px solid ${D.border}`,gap:8}}>
+        <span style={{fontFamily:D.mono,fontSize:9,fontWeight:700,color:D.text}}>10.0.0.0/24</span>
+        <DBadge c="green">6 up</DBadge>
+        <div style={{flex:1}}/><span style={{fontFamily:D.mono,fontSize:9,color:D.xdim}}>▾</span>
+      </Row>
+      {[
+        {ip:'10.0.0.1', host:'vpn-gw', vendor:'Cisco',st:'up',phase:6,isNew:false,changed:false},
+        {ip:'10.0.0.11',host:'srv-01', vendor:'Dell', st:'up',phase:5,isNew:false,changed:true},
+        {ip:'10.0.0.12',host:'srv-02', vendor:'Dell', st:'up',phase:6,isNew:false,changed:false},
+      ].map((d,i)=>(
+        <div key={i} style={{background:D.bg}}>
+          <Row style={{padding:'6px 12px',gap:8}}>
+            <DDot status={d.st}/>
+            <Col style={{flex:1,minWidth:0,gap:2}}>
+              <Row style={{gap:6}}>
+                <span style={{fontFamily:D.mono,fontSize:10,fontWeight:700,color:D.text}}>{d.ip}</span>
+                {d.changed && <DBadge c="amber">CHG</DBadge>}
+              </Row>
+              <span style={{fontFamily:D.mono,fontSize:9,color:D.dim}}>{d.host} · {d.vendor}</span>
+            </Col>
+            <span style={{color:D.xdim}}>›</span>
+          </Row>
+          <div style={{height:1,background:D.border}}/>
+        </div>
+      ))}
+    </div>
+    <BottomNav active="devices" dark/>
+  </Phone>
+);
+
+/* ════════════════════════════════════════
+   SCAN QUEUE V1 — Light, status sections
+════════════════════════════════════════ */
+const QueueV1 = () => (
+  <Phone>
+    <StatusBar/>
+    <Row style={{padding:'7px 12px',borderBottom:`1.5px solid ${L.border}`,gap:8,flexShrink:0}}>
+      <span style={{fontFamily:L.mono,fontSize:13,fontWeight:700}}>Scan Queue</span>
+      <Badge c="amber">3 pending</Badge>
+      <div style={{flex:1}}/>
+      <Btn sm primary>+ Add</Btn>
+    </Row>
+
+    <div style={{flex:1,overflowY:'hidden',display:'flex',flexDirection:'column'}}>
+      <SecHd label="▶ Running"/>
+      <div style={{padding:'8px 12px',borderBottom:`1.5px solid ${L.border}`,background:L.greenBg,flexShrink:0}}>
+        <Row style={{gap:8,marginBottom:5}}>
+          <div style={{width:8,height:8,borderRadius:'50%',background:L.green}}/>
+          <span style={{fontFamily:L.mono,fontSize:11,fontWeight:700,flex:1}}>192.168.1.0/24</span>
+          <Badge c="blue">port scan</Badge>
+          <Badge c="green">phase 3/6</Badge>
+        </Row>
+        <Row style={{gap:8,marginBottom:4}}>
+          <div style={{flex:1,height:5,background:'rgba(0,0,0,0.08)',borderRadius:2,overflow:'hidden'}}>
+            <div style={{width:'63%',height:'100%',background:L.green}}/>
+          </div>
+          <span style={{fontFamily:L.mono,fontSize:9,color:L.dim,whiteSpace:'nowrap'}}>63% · ~1m left</span>
+        </Row>
+        <span style={{fontFamily:L.mono,fontSize:9,color:L.dim}}>15 / 24 hosts · started 09:21</span>
+      </div>
+
+      <SecHd label="⏸ Pending — 3 jobs"/>
+      {[
+        {n:1,target:'192.168.1.47',  type:'deep scan',  eta:'after current',who:'manual'},
+        {n:2,target:'10.0.0.0/24',   type:'ping sweep',  eta:'~3m',who:'scheduled'},
+        {n:3,target:'192.168.1.201', type:'port scan',   eta:'~5m',who:'manual'},
+      ].map((j,i)=>(
+        <div key={i}>
+          <Row style={{padding:'7px 12px',gap:8}}>
+            <span style={{fontFamily:L.mono,fontSize:10,fontWeight:700,color:L.xdim,width:14}}>{j.n}</span>
+            <Col style={{flex:1,minWidth:0,gap:3}}>
+              <span style={{fontFamily:L.mono,fontSize:10,fontWeight:700}}>{j.target}</span>
+              <Row style={{gap:4}}>
+                <Tag>{j.type}</Tag>
+                <Tag>{j.who}</Tag>
+                <span style={{fontFamily:L.mono,fontSize:9,color:L.xdim,marginLeft:2}}>ETA {j.eta}</span>
+              </Row>
+            </Col>
+            <Row style={{gap:4}}>
+              <Btn sm>↑</Btn>
+              <Btn sm>↓</Btn>
+              <Btn sm>✕</Btn>
+            </Row>
+          </Row>
+          <Div/>
+        </div>
+      ))}
+
+      <SecHd label="✓ Completed today — 8 jobs"/>
+      {[
+        {target:'192.168.1.0/24',type:'ping sweep',done:'09:12',result:'31 hosts found'},
+        {target:'192.168.1.12', type:'port scan',  done:'08:55',result:'6 ports open'},
+        {target:'10.0.0.0/24',  type:'ping sweep',  done:'08:30',result:'6 hosts found'},
+        {target:'192.168.1.5',  type:'OS detect',  done:'08:10',result:'Linux 5.x'},
+      ].map((j,i)=>(
+        <div key={i}>
+          <Row style={{padding:'5px 12px',gap:8}}>
+            <span style={{fontFamily:L.mono,fontSize:11,color:L.green}}>✓</span>
+            <Col style={{flex:1,minWidth:0}}>
+              <span style={{fontFamily:L.mono,fontSize:10,color:L.dim}}>{j.target}</span>
+              <span style={{fontFamily:L.mono,fontSize:9,color:L.xdim}}>{j.type} · {j.done}</span>
+            </Col>
+            <span style={{fontFamily:L.mono,fontSize:9,color:L.xdim}}>{j.result}</span>
+            <span style={{color:L.xdim}}>›</span>
+          </Row>
+          <Div/>
+        </div>
+      ))}
+    </div>
+    <BottomNav active="queue"/>
+  </Phone>
+);
+
+/* ════════════════════════════════════════
+   SCAN QUEUE V2 — Dark, ordered pipeline
+════════════════════════════════════════ */
+const QueueV2 = () => (
+  <Phone dark>
+    <StatusBar dark/>
+    <Row style={{padding:'7px 12px',borderBottom:`1.5px solid ${D.border}`,gap:8,flexShrink:0}}>
+      <span style={{fontFamily:D.mono,fontSize:13,fontWeight:700,color:D.text}}>Scan Queue</span>
+      <div style={{flex:1}}/>
+      <Btn sm dark>Schedule</Btn>
+      <Btn sm dark primary>+ Add IP</Btn>
+    </Row>
+    {/* 3-col header */}
+    <Row style={{borderBottom:`1.5px solid ${D.border}`,flexShrink:0}}>
+      {[{l:'Pending',n:3,c:D.amber},{l:'Running',n:1,c:D.green},{l:'Done',n:8,c:D.xdim}].map((col,i)=>(
+        <Col key={i} style={{flex:1,padding:'5px 0',alignItems:'center',borderRight:i<2?`1px solid ${D.border}`:'none',background:i===1?D.greenBg:D.bg}}>
+          <span style={{fontFamily:D.mono,fontSize:14,fontWeight:700,color:col.c}}>{col.n}</span>
+          <span style={{fontFamily:D.mono,fontSize:8,color:D.dim,textTransform:'uppercase'}}>{col.l}</span>
+        </Col>
+      ))}
+    </Row>
+
+    {/* running */}
+    <div style={{margin:'8px 10px 4px',border:`1.5px solid ${D.greenBorder}`,borderRadius:4,padding:'8px 10px',background:D.greenBg,flexShrink:0}}>
+      <Row style={{gap:8,marginBottom:4}}>
+        <div style={{width:7,height:7,borderRadius:'50%',background:D.green}}/>
+        <span style={{fontFamily:D.mono,fontSize:11,fontWeight:700,color:D.green,flex:1}}>192.168.1.0/24</span>
+        <DBadge c="blue">port scan</DBadge>
+      </Row>
+      <div style={{height:4,background:'rgba(255,255,255,0.1)',borderRadius:2,overflow:'hidden',marginBottom:4}}>
+        <div style={{width:'63%',height:'100%',background:D.green}}/>
+      </div>
+      <Row style={{gap:0}}>
+        <span style={{fontFamily:D.mono,fontSize:9,color:D.green,flex:1}}>15/24 hosts · 63%</span>
+        <span style={{fontFamily:D.mono,fontSize:9,color:D.green}}>~1m 20s left</span>
+      </Row>
+    </div>
+
+    <SecHd label="Queue order — drag to reorder" dark/>
+    <div style={{flex:1,overflowY:'hidden'}}>
+      {[
+        {n:1,target:'192.168.1.47',  type:'OS detect + svc',who:'auto (post-discovery)'},
+        {n:2,target:'10.0.0.0/24',   type:'ping sweep',     who:'scheduled · 10:00'},
+        {n:3,target:'192.168.1.201', type:'port scan',      who:'manual'},
+      ].map((j,i)=>(
+        <div key={i}>
+          <Row style={{padding:'7px 12px',gap:10}}>
+            <span style={{fontFamily:D.mono,fontSize:10,fontWeight:700,color:D.xdim,width:14}}>{j.n}</span>
+            <Col style={{flex:1,gap:3}}>
+              <span style={{fontFamily:D.mono,fontSize:10,fontWeight:700,color:D.text}}>{j.target}</span>
+              <Row style={{gap:4}}>
+                <Tag dark>{j.type}</Tag>
+              </Row>
+              <span style={{fontFamily:D.mono,fontSize:9,color:D.xdim}}>{j.who}</span>
+            </Col>
+            <Col style={{gap:3}}>
+              <Btn sm dark>↑</Btn>
+              <Btn sm dark>↓</Btn>
+            </Col>
+            <Btn sm dark>✕</Btn>
+          </Row>
+          <div style={{height:1,background:D.border}}/>
+        </div>
+      ))}
+      {/* add target */}
+      <div style={{margin:'10px 12px',border:`1.5px dashed ${D.border}`,borderRadius:4,padding:'10px',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+        <span style={{fontFamily:D.mono,fontSize:10,color:D.xdim}}>+ IP, range, or subnet</span>
+      </div>
+      {/* auto-enrichment note */}
+      <div style={{margin:'0 12px',padding:'8px 10px',background:D.bg2,borderRadius:4,border:`1px solid ${D.border}`}}>
+        <span style={{fontFamily:D.mono,fontSize:9,color:D.dim,lineHeight:1.5}}>
+          Auto-enrichment: new hosts are queued for OS → Svc detection automatically after ping sweep.
+          Vuln scan runs on schedule (weekly).
+        </span>
+      </div>
+    </div>
+    <BottomNav active="queue" dark/>
+  </Phone>
+);
+
+/* ════════════════════════════════════════
+   DEVICE DETAIL — pipeline + ports (light)
+════════════════════════════════════════ */
+const DeviceDetailV1 = () => (
+  <Phone>
+    <StatusBar/>
+    <Row style={{padding:'7px 12px',borderBottom:`1.5px solid ${L.border}`,gap:8,flexShrink:0}}>
+      <span style={{fontSize:14,cursor:'pointer',color:L.dim}}>← Back</span>
+      <div style={{flex:1}}/>
+      <Btn sm>🔖 Watch</Btn>
+      <Btn sm primary>Scan now</Btn>
+    </Row>
+    <div style={{flex:1,overflowY:'hidden',display:'flex',flexDirection:'column'}}>
+      {/* identity */}
+      <div style={{padding:'8px 12px',background:L.greenBg,borderBottom:`1px solid ${L.greenBorder}`,flexShrink:0}}>
+        <Row style={{gap:8,marginBottom:4}}>
+          <Dot status="up"/>
+          <span style={{fontFamily:L.mono,fontSize:14,fontWeight:700}}>192.168.1.47</span>
+          <Badge c="green">NEW · 14m ago</Badge>
+        </Row>
+        <div style={{fontFamily:L.mono,fontSize:9,color:L.dim,lineHeight:1.8}}>
+          <Row style={{gap:16}}><span>MAC: DC:A6:32:AB:CD:EF</span><span>Vendor: Raspberry Pi</span></Row>
+          <Row style={{gap:16}}><span>Label: <span style={{color:L.blue,textDecoration:'underline',cursor:'pointer'}}>+ add label</span></span><span>Hostname: none</span></Row>
+        </div>
+        {/* enrichment pipeline */}
+        <div style={{marginTop:6}}>
+          <span style={{fontFamily:L.mono,fontSize:8,color:L.xdim,textTransform:'uppercase',letterSpacing:.5}}>Enrichment progress</span>
+          <Row style={{gap:0,marginTop:4}}>
+            {PHASES.map((p,i)=>{
+              const done=1, active=i===done;
+              const state=i<done?'done':i===done?'active':'pending';
+              return (
+                <Col key={p} style={{flex:1,alignItems:'center',gap:2}}>
+                  <div style={{width:'90%',height:6,borderRadius:2,background:state==='done'?L.green:state==='active'?L.amber:L.bg3}}/>
+                  <span style={{fontFamily:L.mono,fontSize:7,color:state==='done'?L.green:state==='active'?L.amber:L.xdim}}>{p}</span>
+                </Col>
+              );
+            })}
+          </Row>
+        </div>
+      </div>
+
+      {/* open ports */}
+      <SecHd label="Open ports (discovered)"/>
+      <Row style={{padding:'3px 12px',background:L.bg3,borderBottom:`1px solid ${L.border}`}}>
+        {['Port','Proto','Service','State','Version'].map((h,i)=>(
+          <span key={i} style={{fontFamily:L.mono,fontSize:8,color:L.xdim,textTransform:'uppercase',flex:[0.8,0.7,1.5,0.8,1.5][i]}}>{h}</span>
+        ))}
+      </Row>
+      {[
+        {port:22,  proto:'tcp',svc:'ssh',    state:'open',ver:'OpenSSH 8.9'},
+        {port:80,  proto:'tcp',svc:'http',   state:'open',ver:'nginx 1.22'},
+        {port:443, proto:'tcp',svc:'https',  state:'open',ver:'pending…'},
+        {port:8888,proto:'tcp',svc:'unknown',state:'open',ver:'pending…'},
+      ].map((p,i)=>(
+        <div key={i}>
+          <Row style={{padding:'5px 12px',gap:0}}>
+            <span style={{fontFamily:L.mono,fontSize:10,fontWeight:700,flex:0.8}}>{p.port}</span>
+            <span style={{fontFamily:L.mono,fontSize:9,color:L.xdim,flex:0.7}}>{p.proto}</span>
+            <span style={{fontFamily:L.sans,fontSize:10,flex:1.5}}>{p.svc}</span>
+            <Badge c="green" style={{flex:0.8}}>{p.state}</Badge>
+            <span style={{fontFamily:L.mono,fontSize:9,color:p.ver.includes('pending')?L.xdim:L.dim,fontStyle:p.ver.includes('pending')?'italic':'normal',flex:1.5}}>{p.ver}</span>
+          </Row>
+          <Div/>
+        </div>
+      ))}
+      {/* pending ports note */}
+      <div style={{padding:'5px 12px',background:L.amberBg,borderBottom:`1px solid ${L.amberBorder}`}}>
+        <span style={{fontFamily:L.mono,fontSize:9,color:L.amber}}>⏳ Service/version scan pending — queued as job #1</span>
+      </div>
+
+      {/* notes */}
+      <SecHd label="Notes"/>
+      <div style={{padding:'8px 12px',borderBottom:`1px solid ${L.border}`}}>
+        <div style={{border:`1px solid ${L.border}`,borderRadius:3,padding:'6px 8px',fontFamily:L.sans,fontSize:10,color:L.xdim,fontStyle:'italic',background:L.bg2}}>Add a note…</div>
+      </div>
+    </div>
+    <BottomNav active="devices"/>
+  </Phone>
+);
+
+/* ════════════════════════════════════════
+   DEVICE HISTORY V1 — Timeline (light)
+════════════════════════════════════════ */
+const HistoryV1 = () => {
+  const avail = [1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1];
+  return (
+    <Phone>
+      <StatusBar/>
+      <Row style={{padding:'7px 12px',borderBottom:`1.5px solid ${L.border}`,gap:8,flexShrink:0}}>
+        <span style={{fontSize:14,cursor:'pointer',color:L.dim}}>← 192.168.1.12</span>
+        <div style={{flex:1}}/>
+        <span style={{fontFamily:L.mono,fontSize:11,fontWeight:700}}>History</span>
+        <div style={{flex:1}}/>
+        <Btn sm>Export</Btn>
+      </Row>
+
+      {/* availability */}
+      <div style={{padding:'8px 12px',borderBottom:`1px solid ${L.border}`,flexShrink:0}}>
+        <Row style={{gap:0,marginBottom:4}}>
+          <span style={{fontFamily:L.mono,fontSize:8,color:L.xdim,textTransform:'uppercase',letterSpacing:.5,flex:1}}>Availability — 30 days</span>
+          <span style={{fontFamily:L.mono,fontSize:9,color:L.green,fontWeight:700}}>93.3% uptime</span>
+        </Row>
+        <AvailBar data={avail}/>
+        <Row style={{gap:0,marginTop:3}}>
+          <span style={{fontFamily:L.mono,fontSize:8,color:L.xdim}}>30d ago</span>
+          <div style={{flex:1}}/>
+          <span style={{fontFamily:L.mono,fontSize:8,color:L.xdim}}>today</span>
+        </Row>
+      </div>
+
+      {/* summary stats */}
+      <Row style={{borderBottom:`1px solid ${L.border}`,flexShrink:0}}>
+        {[{n:'12',l:'Port events'},{n:'3',l:'Outages'},{n:'2',l:'OS changes'},{n:'14',l:'Scans'}].map((s,i,a)=>(
+          <Col key={i} style={{flex:1,padding:'6px 0',alignItems:'center',borderRight:i<a.length-1?`1px solid ${L.border}`:'none'}}>
+            <span style={{fontFamily:L.mono,fontSize:16,fontWeight:700}}>{s.n}</span>
+            <span style={{fontFamily:L.mono,fontSize:8,color:L.xdim}}>{s.l}</span>
+          </Col>
+        ))}
+      </Row>
+
+      {/* filter tabs */}
+      <Row style={{padding:'4px 12px',gap:4,borderBottom:`1px solid ${L.border}`,flexShrink:0,background:L.bg2}}>
+        {['All','Ports','Availability','Scans','Labels'].map((t,i)=><Tag key={t} active={i===0}>{t}</Tag>)}
+      </Row>
+
+      <div style={{flex:1,overflowY:'hidden'}}>
+        {/* date group */}
+        <div style={{padding:'3px 12px',background:L.bg3,borderBottom:`1px solid ${L.border}`}}>
+          <span style={{fontFamily:L.mono,fontSize:9,fontWeight:700,color:L.dim}}>Today · Apr 27</span>
+        </div>
+        {[
+          {time:'09:05',type:'change',color:'amber',detail:'Port 22 opened',sub:'was closed for 3 days'},
+          {time:'08:30',type:'scan',  color:'blue', detail:'Port scan completed',sub:'6 ports open · 0 new'},
+          {time:'08:12',type:'label', color:'gray', detail:'Label added: "pi-hole"',sub:'by user'},
+        ].map((e,i)=>(
+          <div key={i}>
+            <Row style={{padding:'7px 12px',gap:10,alignItems:'flex-start'}}>
+              <span style={{fontFamily:L.mono,fontSize:9,color:L.xdim,width:38,flexShrink:0,paddingTop:1}}>{e.time}</span>
+              <div style={{width:8,height:8,borderRadius:'50%',background:{amber:L.amber,blue:L.blue,gray:L.gray,green:L.green,red:L.red}[e.color],marginTop:2,flexShrink:0}}/>
+              <Col style={{flex:1,gap:1}}>
+                <span style={{fontFamily:L.sans,fontSize:11,fontWeight:600,color:L.text}}>{e.detail}</span>
+                <span style={{fontFamily:L.mono,fontSize:9,color:L.xdim}}>{e.sub}</span>
+              </Col>
+              <span style={{color:L.xdim}}>›</span>
+            </Row>
+            <Div/>
+          </div>
+        ))}
+
+        <div style={{padding:'3px 12px',background:L.bg3,borderBottom:`1px solid ${L.border}`}}>
+          <span style={{fontFamily:L.mono,fontSize:9,fontWeight:700,color:L.dim}}>Yesterday · Apr 26</span>
+        </div>
+        {[
+          {time:'23:47',type:'down', color:'red',  detail:'Host went offline',sub:'duration: 2h 13m'},
+          {time:'21:34',type:'up',   color:'green',detail:'Host came back online',sub:'after 2h 13m outage'},
+          {time:'14:20',type:'scan', color:'blue', detail:'Full scan completed',sub:'OS: Linux · 5 ports open'},
+          {time:'09:00',type:'change',color:'amber',detail:'Port 3000 closed',sub:'was open since Apr 20'},
+        ].map((e,i)=>(
+          <div key={i}>
+            <Row style={{padding:'7px 12px',gap:10,alignItems:'flex-start'}}>
+              <span style={{fontFamily:L.mono,fontSize:9,color:L.xdim,width:38,flexShrink:0,paddingTop:1}}>{e.time}</span>
+              <div style={{width:8,height:8,borderRadius:'50%',background:{amber:L.amber,blue:L.blue,gray:L.gray,green:L.green,red:L.red}[e.color],marginTop:2,flexShrink:0}}/>
+              <Col style={{flex:1,gap:1}}>
+                <span style={{fontFamily:L.sans,fontSize:11,fontWeight:600,color:L.text}}>{e.detail}</span>
+                <span style={{fontFamily:L.mono,fontSize:9,color:L.xdim}}>{e.sub}</span>
+              </Col>
+              <span style={{color:L.xdim}}>›</span>
+            </Row>
+            <Div/>
+          </div>
+        ))}
+      </div>
+      <BottomNav active="devices"/>
+    </Phone>
+  );
+};
+
+/* ════════════════════════════════════════
+   DEVICE HISTORY V2 — Dark, tabbed with port diff
+════════════════════════════════════════ */
+const HistoryV2 = () => {
+  const avail = [1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1];
+  return (
+    <Phone dark>
+      <StatusBar dark/>
+      <Row style={{padding:'7px 12px',borderBottom:`1.5px solid ${D.border}`,gap:8,flexShrink:0}}>
+        <span style={{fontSize:14,cursor:'pointer',color:D.dim}}>← 192.168.1.12</span>
+        <div style={{flex:1}}/>
+        <span style={{fontFamily:D.mono,fontSize:11,fontWeight:700,color:D.text}}>History</span>
+        <div style={{flex:1}}/>
+        <Btn sm dark>Export</Btn>
+      </Row>
+
+      {/* tabs */}
+      <Row style={{borderBottom:`1.5px solid ${D.border}`,flexShrink:0}}>
+        {['Overview','Ports','Availability','Scans'].map((t,i)=>(
+          <div key={t} style={{flex:1,textAlign:'center',padding:'6px 0',fontFamily:D.mono,fontSize:10,fontWeight:i===0?700:400,color:i===0?D.text:D.dim,borderBottom:i===0?`2px solid ${D.green}`:'2px solid transparent'}}>{t}</div>
+        ))}
+      </Row>
+
+      {/* avail bar */}
+      <div style={{padding:'8px 12px',borderBottom:`1px solid ${D.border}`,flexShrink:0}}>
+        <Row style={{marginBottom:4}}>
+          <span style={{fontFamily:D.mono,fontSize:8,color:D.xdim,textTransform:'uppercase',letterSpacing:.5,flex:1}}>30-day uptime</span>
+          <span style={{fontFamily:D.mono,fontSize:9,fontWeight:700,color:D.green}}>93.3%</span>
+        </Row>
+        <Row style={{gap:1}}>
+          {avail.map((v,i)=>(
+            <div key={i} style={{flex:1,height:18,background:v===1?D.green:v===0?D.red:D.bg3,borderRadius:2,minWidth:6,opacity:i===avail.length-1?1:0.7+0.3*(i/avail.length)}}/>
+          ))}
+        </Row>
+        <Row style={{marginTop:3}}>
+          <span style={{fontFamily:D.mono,fontSize:7,color:D.xdim}}>Apr 1</span>
+          <div style={{flex:1}}/>
+          <span style={{fontFamily:D.mono,fontSize:7,color:D.xdim}}>Apr 27</span>
+        </Row>
+      </div>
+
+      {/* port state snapshot */}
+      <SecHd label="Current port snapshot" dark/>
+      <Row style={{padding:'3px 12px',background:D.bg3,borderBottom:`1px solid ${D.border}`,flexShrink:0}}>
+        {['Port','Service','State','Since'].map((h,i)=>(
+          <span key={i} style={{fontFamily:D.mono,fontSize:8,color:D.xdim,textTransform:'uppercase',flex:[0.7,1.5,0.8,1][i]}}>{h}</span>
+        ))}
+      </Row>
+      {[
+        {port:22,  svc:'ssh',    state:'open', since:'Apr 15'},
+        {port:80,  svc:'http',   state:'open', since:'Apr 2'},
+        {port:443, svc:'https',  state:'open', since:'Apr 2'},
+        {port:3000,svc:'node',   state:'closed',since:'Apr 26'},
+      ].map((p,i)=>(
+        <div key={i}>
+          <Row style={{padding:'5px 12px',gap:0}}>
+            <span style={{fontFamily:D.mono,fontSize:10,fontWeight:700,color:D.text,flex:0.7}}>{p.port}</span>
+            <span style={{fontFamily:D.sans,fontSize:10,color:D.dim,flex:1.5}}>{p.svc}</span>
+            <div style={{flex:0.8}}><DBadge c={p.state==='open'?'green':'gray'}>{p.state}</DBadge></div>
+            <span style={{fontFamily:D.mono,fontSize:9,color:D.xdim,flex:1}}>{p.since}</span>
+          </Row>
+          <div style={{height:1,background:D.border}}/>
+        </div>
+      ))}
+
+      {/* port change history */}
+      <SecHd label="Port change log — 30 days" dark/>
+      <div style={{flex:1,overflowY:'hidden'}}>
+        {[
+          {date:'Apr 27',port:22,  what:'opened',c:'green'},
+          {date:'Apr 26',port:3000,what:'closed', c:'red'},
+          {date:'Apr 20',port:3000,what:'opened', c:'green'},
+          {date:'Apr 15',port:8443,what:'closed', c:'red'},
+          {date:'Apr 10',port:8443,what:'opened', c:'green'},
+          {date:'Apr 2', port:80,  what:'opened', c:'green'},
+          {date:'Apr 2', port:443, what:'opened', c:'green'},
+        ].map((e,i)=>(
+          <div key={i}>
+            <Row style={{padding:'5px 12px',gap:10}}>
+              <span style={{fontFamily:D.mono,fontSize:9,color:D.xdim,width:44,flexShrink:0}}>{e.date}</span>
+              <span style={{fontFamily:D.mono,fontSize:10,fontWeight:700,color:D.text,width:36,flexShrink:0}}>{e.port}</span>
+              <DBadge c={e.c}>{e.what}</DBadge>
+              <div style={{flex:1}}/>
+              <span style={{color:D.xdim}}>›</span>
+            </Row>
+            <div style={{height:1,background:D.border}}/>
+          </div>
+        ))}
+      </div>
+      <BottomNav active="devices" dark/>
+    </Phone>
+  );
+};
+
+/* ════════════════════════════════════════
+   APP
+════════════════════════════════════════ */
+function App() {
+  return (
+    <DesignCanvas title="LabPeek-Go · Wireframes v3">
+      <DCSection id="dash" title="Dashboard">
+        <DCArtboard id="dash-v1" label="Dashboard · Light — KPI + Alerts" width={390} height={780}><DashV1/></DCArtboard>
+        <DCArtboard id="dash-v2" label="Dashboard · Dark — Time Window + Timeline" width={390} height={780}><DashV2/></DCArtboard>
+      </DCSection>
+      <DCSection id="devices" title="Device List">
+        <DCArtboard id="dev-v1" label="Devices · Light — Compact Table + Pipeline" width={390} height={780}><DevicesV1/></DCArtboard>
+        <DCArtboard id="dev-v2" label="Devices · Dark — Grouped by Subnet" width={390} height={780}><DevicesV2/></DCArtboard>
+      </DCSection>
+      <DCSection id="queue" title="Scan Queue">
+        <DCArtboard id="q-v1" label="Queue · Light — Status Sections" width={390} height={780}><QueueV1/></DCArtboard>
+        <DCArtboard id="q-v2" label="Queue · Dark — Ordered Pipeline" width={390} height={780}><QueueV2/></DCArtboard>
+      </DCSection>
+      <DCSection id="detail" title="Device Detail">
+        <DCArtboard id="det-v1" label="Device Detail · Enrichment Pipeline + Ports" width={390} height={780}><DeviceDetailV1/></DCArtboard>
+      </DCSection>
+      <DCSection id="history" title="Device History">
+        <DCArtboard id="hist-v1" label="History · Light — 30-day Timeline" width={390} height={780}><HistoryV1/></DCArtboard>
+        <DCArtboard id="hist-v2" label="History · Dark — Tabbed + Port Diff Log" width={390} height={780}><HistoryV2/></DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

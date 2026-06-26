@@ -1,0 +1,109 @@
+LabPeek-Go — UI Specification for Codex
+Overview
+LabPeek-Go is a local network scanning and monitoring tool. It runs as a web UI (desktop + mobile browser). The backend performs progressive network enrichment scans; the UI surfaces discovered devices, tracks changes over time, and manages a scan job queue.
+
+Navigation
+Bottom tab bar with four items: Home, Devices, Queue, Settings.
+
+A network selector appears in every top bar — a dropdown pill showing the currently active network (e.g. "Home Lab / 192.168.1.0/24"). Tapping it opens a picker to switch between configured networks/subnets.
+
+Scan Pipeline
+Every discovered device passes through these enrichment phases in order. Phases run automatically after discovery; the user can also trigger them manually.
+
+Ping Sweep — discover live hosts (fastest; runs first across entire subnet)
+ARP Scan — catch hosts that don't respond to ping; runs passively alongside/after ping sweep
+Port Scan — standard ports on all live hosts
+OS Detection — fingerprint OS using open port data
+Service / Version Detection — identify software and version on each open port
+Vulnerability Scan — scheduled (weekly or monthly); runs last
+Any device found for the first time by ping or ARP is immediately queued for the remaining phases (3–5) automatically. Vuln scan is never triggered automatically on new devices; it runs only on schedule or manually.
+
+Data fields that haven't been discovered yet are shown as "pending…" (italicised, muted) until the relevant phase completes.
+
+Screen 1 — Dashboard (Home tab)
+Purpose: At-a-glance overview of the current network state and recent events.
+
+Layout:
+
+Top bar: logo, network selector, "Scan" button
+KPI strip (5 tiles): Total devices | New | Changed | Offline | In queue
+"New" tile highlighted green, "Changed" amber, "Offline" red
+"New Devices" section: list of hosts discovered in the last N hours (time window is user-configurable: 1h / 4h / 12h / 24h / 7d). Each row shows IP, vendor, MAC, time since discovery, and enrichment pipeline progress (mini phase bar). Rows highlighted green.
+"Changes Detected" section: list of recent change events (port opened/closed, hostname changed, OS changed, host went offline/online). Each row shows IP, description, time ago. Offline events highlighted red, other changes amber.
+Tapping any row navigates to Device Detail.
+Screen 2 — Device List (Devices tab)
+Purpose: Browse all known devices across all subnets.
+
+Layout:
+
+Top bar: "Devices", network selector, Filter button, Scan All button
+Subnet filter pills: "All (N)" + one pill per subnet (e.g. "192.168.1.x (25)")
+Two view options (toggle):
+Table view: columns — IP, Hostname/Label, Vendor, Pipeline phase bar, Status dot
+Grouped view: devices grouped by subnet with collapse/expand; each group shows counts (up / down / new)
+Each device row shows:
+Status dot (green = up, red = down)
+IP address (bold, green if new)
+Hostname or label (muted if unknown)
+Vendor
+Pipeline phase mini-bar: 6 segments (Ping/ARP/Ports/OS/Svcs/Vuln) — green = done, amber = in progress, grey = pending
+NEW badge (green) and/or CHG badge (amber) if recently changed
+Tapping a row navigates to Device Detail.
+Screen 3 — Device Detail
+Purpose: Full profile of a single device.
+
+Layout:
+
+Back button (returns to Device List), "Watch" (bookmark) button, "Scan Now" button
+Identity card (highlighted green if new):
+IP address, status dot, NEW badge + time since discovery
+MAC address, vendor, hostname, label (editable inline, "+ add label" if none)
+Enrichment pipeline progress bar — 6 labelled segments showing completion state
+Open Ports table: columns — Port, Protocol, Service, State, Version
+Rows where version not yet scanned show "pending…" in italics
+A banner below the table shows queue status if service scan is pending ("Service/version scan pending — queued as job #1")
+Notes field: free-text, editable
+History link → navigates to Device History screen
+Screen 4 — Device History
+Purpose: 30-day historical record for a single device.
+
+Layout:
+
+Back button (shows IP of parent device), Export button
+Availability bar: 30 horizontal segments, one per day — green = up, red = down/outage. Uptime % shown top-right.
+Summary stats strip: Port events | Outages | OS changes | Scans (counts over 30 days)
+Filter tabs: All | Ports | Availability | Scans | Labels
+Event timeline: events grouped by date (newest first). Each event row:
+Time (HH:MM)
+Colour-coded dot: green = came online / port opened, red = went offline / port closed, amber = changed, blue = scan completed, grey = label/note
+Description (e.g. "Port 22 opened", "Host went offline", "OS fingerprint changed")
+Sub-line with context (e.g. "was closed for 3 days", "duration: 2h 13m")
+Chevron → tap for event detail
+Port change log (visible on "Ports" tab): date | port number | opened/closed badge — full 30-day log of port state changes
+Screen 5 — Scan Queue (Queue tab)
+Purpose: View and manage the queue of pending, running, and completed scan jobs.
+
+Layout:
+
+Top bar: "Scan Queue", count badge (e.g. "3 pending"), "+ Add" button
+3-column summary strip: Pending (N) | Running (N) | Done (N)
+Running job card (expanded): target IP/subnet, scan type, phase (e.g. "port scan · phase 3/6"), progress bar + % + ETA, stop button
+Pending jobs list (ordered queue):
+Each job: position number, target, scan type, trigger (manual / scheduled), ETA
+Up/Down arrows to reorder, X to remove
+"+ Add IP, range, or subnet" empty-state entry at the bottom
+Completed jobs list: target, scan type, completion time, result summary (e.g. "6 ports open"). Tapping a completed job shows the scan result diff.
+Auto-enrichment note: explains that new hosts discovered by ping/ARP are automatically queued for OS → Service detection. Vuln scan runs on configured schedule only.
+Users can also schedule recurring scans (cron-style): a "Schedule" button opens a form with target, scan type, and cron expression.
+Data States
+State	Visual treatment
+New device	Green background on row/card, NEW badge
+Changed device	Amber CHG badge
+Offline	Red status dot, red DOWN badge
+Pending enrichment	Phase segments grey, field values show "pending…" italic
+In progress	Active phase segment shown amber
+Scan running	Progress bar, green highlight on queue card
+Theming
+Light mode (primary): white background, IBM Plex Mono for all data/labels, IBM Plex Sans for prose/descriptions
+Dark mode (alternate, preferred for home lab context): #141414 background, same font stack
+Accent colours: green #1a7a4a (up/new/done), amber #a05500 (change/pending), red #b81c1c (offline/closed), blue #1a4a8a (scan/info)

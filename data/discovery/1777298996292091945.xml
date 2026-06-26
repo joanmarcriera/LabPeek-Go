@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<?xml-stylesheet href="file:///usr/bin/../share/nmap/nmap.xsl" type="text/xsl"?>
+<!-- Nmap 7.94 scan initiated Mon Apr 27 14:09:56 2026 as: nmap -sn -oX /app/data/discovery/1777298996292091945.xml 192.168.0.0/24 -->
+<nmaprun scanner="nmap" args="nmap -sn -oX /app/data/discovery/1777298996292091945.xml 192.168.0.0/24" start="1777298996" startstr="Mon Apr 27 14:09:56 2026" version="7.94" xmloutputversion="1.05">

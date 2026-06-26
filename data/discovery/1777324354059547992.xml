@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<?xml-stylesheet href="file:///usr/bin/../share/nmap/nmap.xsl" type="text/xsl"?>
+<!-- Nmap 7.94 scan initiated Mon Apr 27 21:12:34 2026 as: nmap -T4 -n -PS22,80,443,445,8080,8443 -&#45;top-ports 20 -&#45;open -&#45;host-timeout 30s -oX /app/data/discovery/1777324354059547992.xml 192.168.0.0/24 -->
+<nmaprun scanner="nmap" args="nmap -T4 -n -PS22,80,443,445,8080,8443 -&#45;top-ports 20 -&#45;open -&#45;host-timeout 30s -oX /app/data/discovery/1777324354059547992.xml 192.168.0.0/24" start="1777324354" startstr="Mon Apr 27 21:12:34 2026" version="7.94" xmloutputversion="1.05">
+<scaninfo type="syn" protocol="tcp" numservices="20" services="21-23,25,53,80,110-111,135,139,143,443,445,993,995,1723,3306,3389,5900,8080"/>
+<verbose level="0"/>
+<debugging level="0"/>
+<hosthint><status state="up" reason="unknown-response" reason_ttl="0"/>
+<address addr="192.168.0.3" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="unknown-response" reason_ttl="0"/>
+<address addr="192.168.0.5" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="unknown-response" reason_ttl="0"/>
+<address addr="192.168.0.4" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="unknown-response" reason_ttl="0"/>
+<address addr="192.168.0.10" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="unknown-response" reason_ttl="0"/>
+<address addr="192.168.0.13" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="unknown-response" reason_ttl="0"/>
+<address addr="192.168.0.30" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="unknown-response" reason_ttl="0"/>
+<address addr="192.168.0.28" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="unknown-response" reason_ttl="0"/>
+<address addr="192.168.0.166" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="unknown-response" reason_ttl="0"/>
+<address addr="192.168.0.148" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="unknown-response" reason_ttl="0"/>
+<address addr="192.168.0.194" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="unknown-response" reason_ttl="0"/>
+<address addr="192.168.0.255" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="unknown-response" reason_ttl="0"/>
+<address addr="192.168.0.212" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="unknown-response" reason_ttl="0"/>
+<address addr="192.168.0.229" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="unknown-response" reason_ttl="0"/>
+<address addr="192.168.0.158" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="unknown-response" reason_ttl="0"/>
+<address addr="192.168.0.0" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="no-response" reason_ttl="0"/>
+<address addr="192.168.0.226" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="no-response" reason_ttl="0"/>
+<address addr="192.168.0.168" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="no-response" reason_ttl="0"/>
+<address addr="192.168.0.163" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="unknown-response" reason_ttl="0"/>
+<address addr="192.168.0.174" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="no-response" reason_ttl="0"/>
+<address addr="192.168.0.196" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<hosthint><status state="up" reason="no-response" reason_ttl="0"/>
+<address addr="192.168.0.131" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<host starttime="1777325590" endtime="1777325621" timedout="true"><status state="up" reason="reset" reason_ttl="64"/>
+<address addr="192.168.0.0" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="647" rttvar="2305" to="100000"/>
+</host>
+<host starttime="1777325589" endtime="1777325620" timedout="true"><status state="up" reason="syn-ack" reason_ttl="64"/>
+<address addr="192.168.0.3" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="449162" rttvar="542973" to="1250000"/>
+</host>
+<host starttime="1777325589" endtime="1777325620" timedout="true"><status state="up" reason="syn-ack" reason_ttl="64"/>
+<address addr="192.168.0.4" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="9360" rttvar="7669" to="100000"/>
+</host>
+<host starttime="1777325589" endtime="1777325620" timedout="true"><status state="up" reason="syn-ack" reason_ttl="64"/>
+<address addr="192.168.0.5" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="22729" rttvar="18431" to="100000"/>
+</host>
+<host starttime="1777325589" endtime="1777325620" timedout="true"><status state="up" reason="reset" reason_ttl="64"/>
+<address addr="192.168.0.10" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="1145165" rttvar="1027760" to="1250000"/>
+</host>
+<host starttime="1777325589" endtime="1777325620" timedout="true"><status state="up" reason="reset" reason_ttl="64"/>
+<address addr="192.168.0.13" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="1092463" rttvar="618837" to="1250000"/>
+</host>
+<host starttime="1777325589" endtime="1777325620" timedout="true"><status state="up" reason="reset" reason_ttl="64"/>
+<address addr="192.168.0.28" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="1100" rttvar="3769" to="100000"/>
+</host>
+<host starttime="1777325589" endtime="1777325620" timedout="true"><status state="up" reason="reset" reason_ttl="64"/>
+<address addr="192.168.0.30" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="1005212" rttvar="239176" to="1250000"/>
+</host>
+<host starttime="1777325589" endtime="1777325620" timedout="true"><status state="up" reason="reset" reason_ttl="64"/>
+<address addr="192.168.0.131" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="75003868" rttvar="2000000" to="1250000"/>
+</host>
+<host starttime="1777325589" endtime="1777325620" timedout="true"><status state="up" reason="reset" reason_ttl="64"/>
+<address addr="192.168.0.148" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="1009" rttvar="2962" to="100000"/>
+</host>
+<host starttime="1777325589" endtime="1777325620" timedout="true"><status state="up" reason="reset" reason_ttl="64"/>
+<address addr="192.168.0.158" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="1010954" rttvar="763013" to="1250000"/>
+</host>
+<host starttime="1777325590" endtime="1777325621" timedout="true"><status state="up" reason="reset" reason_ttl="64"/>
+<address addr="192.168.0.163" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="57424602" rttvar="2000000" to="1250000"/>
+</host>
+<host starttime="1777325590" endtime="1777325621" timedout="true"><status state="up" reason="reset" reason_ttl="64"/>
+<address addr="192.168.0.166" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="1012671" rttvar="324656" to="1250000"/>
+</host>
+<host starttime="1777325589" endtime="1777325620" timedout="true"><status state="up" reason="reset" reason_ttl="64"/>
+<address addr="192.168.0.168" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="75003532" rttvar="2000000" to="1250000"/>
+</host>
+<host starttime="1777325589" endtime="1777325620" timedout="true"><status state="up" reason="reset" reason_ttl="64"/>
+<address addr="192.168.0.174" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="1009355" rttvar="427174" to="1250000"/>
+</host>
+<host starttime="1777325589" endtime="1777325620" timedout="true"><status state="up" reason="reset" reason_ttl="64"/>
+<address addr="192.168.0.194" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="1018652" rttvar="766462" to="1250000"/>
+</host>
+<host starttime="1777325589" endtime="1777325620" timedout="true"><status state="up" reason="reset" reason_ttl="64"/>
+<address addr="192.168.0.196" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="75003836" rttvar="2000000" to="1250000"/>
+</host>
+<host starttime="1777325589" endtime="1777325620" timedout="true"><status state="up" reason="reset" reason_ttl="64"/>
+<address addr="192.168.0.212" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="860" rttvar="2985" to="100000"/>
+</host>
+<host starttime="1777325590" endtime="1777325621" timedout="true"><status state="up" reason="reset" reason_ttl="64"/>
+<address addr="192.168.0.226" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="75003289" rttvar="2000000" to="1250000"/>
+</host>
+<host starttime="1777325591" endtime="1777325622" timedout="true"><status state="up" reason="reset" reason_ttl="64"/>
+<address addr="192.168.0.229" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="1046692" rttvar="789174" to="1250000"/>
+</host>
+<host starttime="1777325589" endtime="1777325620" timedout="true"><status state="up" reason="reset" reason_ttl="64"/>
+<address addr="192.168.0.255" addrtype="ipv4"/>
+<hostnames>
+</hostnames>
+<times srtt="990" rttvar="2316" to="100000"/>
+</host>
+<runstats><finished time="1777325622" timestr="Mon Apr 27 21:33:42 2026" summary="Nmap done at Mon Apr 27 21:33:42 2026; 256 IP addresses (21 hosts up) scanned in 1268.27 seconds" elapsed="1268.27" exit="success"/><hosts up="21" down="235" total="256"/>
+</runstats>
+</nmaprun>

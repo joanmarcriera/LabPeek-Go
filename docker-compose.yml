@@ -1,0 +1,16 @@
+services:
+  labpeek:
+    build: .
+    container_name: labpeek
+    network_mode: host
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    volumes:
+      - ./data:/app/data
+    environment:
+      - LABPEEK_ADDR=:8080
+      - LABPEEK_DB=/app/data/labpeek.db
+      - LABPEEK_DATA_DIR=/app/data
+      - LABPEEK_APP_NAME=LabPeek
+    restart: unless-stopped

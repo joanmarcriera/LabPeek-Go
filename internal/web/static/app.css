@@ -88,6 +88,8 @@ button[type="submit"] {
   background: transparent; border-color: var(--line); color: var(--muted);
 }
 .button.disabled, .disabled { opacity: .45; pointer-events: none; }
+.button.danger { background: var(--red-bg); border-color: var(--red-br); color: var(--red); }
+.button.danger:not(.disabled):hover { background: var(--red); color: var(--bg); border-color: var(--red); }
 .inline { display: inline; }
 
 /* ── KPI strip ───────────────────────────── */

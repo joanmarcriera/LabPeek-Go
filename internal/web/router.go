@@ -57,11 +57,14 @@ func NewRouter(deps Dependencies) http.Handler {
 	r.Get("/health", handlers.Health)
 	r.Get("/", s.dashboard)
 	r.Get("/assets", s.assetsPage)
+	r.Post("/assets/delete", s.deleteAssets)
 	r.Get("/assets/{id}", s.assetDetail)
 	r.Post("/assets/{id}", s.saveAsset)
+	r.Post("/assets/{id}/delete", s.deleteAsset)
 	r.Get("/services", s.servicesPage)
 	r.Get("/discovery", s.discoveryPage)
 	r.Post("/discovery/run", s.startDiscovery)
+	r.Post("/discovery/{id}/cancel", s.cancelDiscovery)
 	r.Get("/shell", s.shellPage)
 	r.Post("/shell", s.runShellCommand)
 	r.Post("/settings/network", s.saveNetworkSettings)
@@ -198,7 +201,18 @@ func (s *server) assetsPage(w http.ResponseWriter, r *http.Request) {
 	subnets := subnetCounts(assets)
 
 	var body strings.Builder
-	body.WriteString(`<section class="toolbar-row"><h1>Devices</h1><div class="toolbar-actions"><a class="button ghost" href="/services">Services</a><a class="button" href="/discovery">Scan All</a></div></section>`)
+
+	// Bulk-delete form wraps the entire page content so checkboxes and the
+	// submit button share the same form regardless of table scroll position.
+	body.WriteString(`<form method="post" action="/assets/delete" id="bulk-form">`)
+
+	body.WriteString(`<section class="toolbar-row"><h1>Devices</h1><div class="toolbar-actions">`)
+	body.WriteString(`<button type="submit" id="delete-btn" class="button danger disabled" `)
+	body.WriteString(`onclick="return confirm('Remove selected devices? This cannot be undone.')">`)
+	body.WriteString(`Delete (<span id="sel-count">0</span>)</button>`)
+	body.WriteString(`<a class="button ghost" href="/services">Services</a><a class="button" href="/discovery">Scan All</a>`)
+	body.WriteString(`</div></section>`)
+
 	body.WriteString(`<div class="pill-row">`)
 	body.WriteString(fmt.Sprintf(`<span class="pill active">All (%d)</span>`, len(assets)))
 	for _, subnet := range orderedSubnetKeys(subnets) {
@@ -206,9 +220,16 @@ func (s *server) assetsPage(w http.ResponseWriter, r *http.Request) {
 	}
 	body.WriteString(`</div>`)
 
-	body.WriteString(`<section class="panel" style="margin-top:.75rem"><table><thead><tr><th style="width:18px"></th><th>IP</th><th>Host / Label</th><th>Vendor</th><th>Pipeline</th><th>Badges</th></tr></thead><tbody>`)
+	body.WriteString(`<section class="panel" style="margin-top:.75rem"><table>`)
+	body.WriteString(`<thead><tr>`)
+	body.WriteString(`<th style="width:28px"><input type="checkbox" id="select-all" title="Select all"></th>`)
+	body.WriteString(`<th style="width:18px"></th>`)
+	body.WriteString(`<th>IP</th><th>Host / Label</th><th>Vendor</th><th>Pipeline</th><th>Badges</th>`)
+	body.WriteString(`</tr></thead><tbody>`)
 	for _, asset := range assets {
 		body.WriteString(`<tr>`)
+		body.WriteString(fmt.Sprintf(`<td style="padding-right:0"><input type="checkbox" class="row-cb" name="id" value="%s"></td>`,
+			template.HTMLEscapeString(asset.ID)))
 		body.WriteString(fmt.Sprintf(`<td style="padding-right:0">%s</td>`, statusDot(asset.Status)))
 		body.WriteString(fmt.Sprintf(`<td class="mono" style="font-weight:700">%s</td>`, template.HTMLEscapeString(asset.PrimaryIP)))
 		body.WriteString(fmt.Sprintf(`<td><a href="/assets/%s">%s</a><div class="muted" style="font-size:.72rem">%s</div></td>`,
@@ -222,6 +243,25 @@ func (s *server) assetsPage(w http.ResponseWriter, r *http.Request) {
 		body.WriteString(`</tr>`)
 	}
 	body.WriteString(`</tbody></table></section>`)
+	body.WriteString(`</form>`)
+
+	body.WriteString(`<script>
+(function(){
+  var all=document.getElementById('select-all');
+  var btn=document.getElementById('delete-btn');
+  var cnt=document.getElementById('sel-count');
+  function update(){
+    var n=document.querySelectorAll('.row-cb:checked').length;
+    cnt.textContent=n;
+    btn.classList.toggle('disabled',n===0);
+  }
+  all.addEventListener('change',function(){
+    document.querySelectorAll('.row-cb').forEach(function(cb){cb.checked=all.checked;});
+    update();
+  });
+  document.querySelectorAll('.row-cb').forEach(function(cb){cb.addEventListener('change',update);});
+})();
+</script>`)
 
 	renderPage(w, s.deps.AppName, pageMeta{
 		Title:   "Devices",
@@ -247,6 +287,8 @@ func (s *server) assetDetail(w http.ResponseWriter, r *http.Request) {
 	body.WriteString(`<section class="toolbar-row"><div><a class="button ghost" href="/assets">Back</a></div><div class="toolbar-actions"><span class="button ghost disabled">Watch</span>`)
 	body.WriteString(fmt.Sprintf(`<form method="post" action="/discovery/run" class="inline"><input type="hidden" name="profile" value="normal"><input type="hidden" name="target" value="%s"><button type="submit" class="button">Service Scan</button></form>`,
 		template.HTMLEscapeString(asset.PrimaryIP)))
+	body.WriteString(fmt.Sprintf(`<form method="post" action="/assets/%s/delete" class="inline" onsubmit="return confirm('Remove this device? This cannot be undone.')"><button type="submit" class="button danger">Remove device</button></form>`,
+		template.HTMLEscapeString(asset.ID)))
 	body.WriteString(`</div></section>`)
 
 	body.WriteString(`<section class="identity-card">`)
@@ -319,6 +361,32 @@ func (s *server) saveAsset(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/assets/"+chi.URLParam(r, "id"), http.StatusSeeOther)
 }
 
+func (s *server) deleteAsset(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := s.deps.Assets.Delete(r.Context(), id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/assets", http.StatusSeeOther)
+}
+
+func (s *server) deleteAssets(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	ids := r.Form["id"]
+	if len(ids) == 0 {
+		http.Redirect(w, r, "/assets", http.StatusSeeOther)
+		return
+	}
+	if err := s.deps.Assets.DeleteBatch(r.Context(), ids); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/assets", http.StatusSeeOther)
+}
+
 func (s *server) servicesPage(w http.ResponseWriter, r *http.Request) {
 	services, err := s.deps.Services.List(r.Context())
 	if err != nil {
@@ -382,22 +450,32 @@ func (s *server) discoveryPage(w http.ResponseWriter, r *http.Request) {
 	body.WriteString(fmt.Sprintf(`<div class="kpi-col"><span class="n" style="color:var(--muted)">%d</span><span class="l">Done</span></div>`, done))
 	body.WriteString(`</div>`)
 
+	// Auto-refresh when something is active
+	if running > 0 || pending > 0 {
+		body.WriteString(`<meta http-equiv="refresh" content="5">`)
+	}
+
 	// Running job card
 	if runningRun != nil {
-		hostPct := 0
-		if runningRun.HostsFound > 0 {
-			hostPct = 50 // approximate until real progress is tracked
+		pct := runningRun.ProgressPercent
+		if pct <= 0 {
+			pct = 5
 		}
+		elapsed := elapsedSince(runningRun.StartedAt)
+		estTotal := profileEstimatedDuration(runningRun.Profile)
 		body.WriteString(`<div class="running-card">`)
 		body.WriteString(`<div class="rc-head"><div class="rc-dot"></div>`)
-		body.WriteString(fmt.Sprintf(`<span class="rc-target">%s</span><span class="badge info">%s</span></div>`,
+		body.WriteString(fmt.Sprintf(`<span class="rc-target">%s</span><span class="badge info">%s</span>`,
 			template.HTMLEscapeString(runningRun.Target),
 			template.HTMLEscapeString(profileLabel(runningRun.Profile)),
 		))
-		body.WriteString(fmt.Sprintf(`<div class="progress-bar"><div class="progress-fill" style="width:%d%%"></div></div>`, hostPct))
-		body.WriteString(fmt.Sprintf(`<div class="rc-meta">%d hosts found · %d services · started %s</div>`,
-			runningRun.HostsFound, runningRun.ServicesFound,
-			template.HTMLEscapeString(timeLabel(runningRun.CreatedAt)),
+		body.WriteString(fmt.Sprintf(`<form method="post" action="/discovery/%s/cancel" style="margin-left:auto"><button type="submit" class="button ghost" style="padding:2px 8px;font-size:.78rem">✕ Cancel</button></form>`,
+			template.HTMLEscapeString(runningRun.ID),
+		))
+		body.WriteString(`</div>`)
+		body.WriteString(fmt.Sprintf(`<div class="progress-bar"><div class="progress-fill" style="width:%d%%"></div></div>`, pct))
+		body.WriteString(fmt.Sprintf(`<div class="rc-meta">%d hosts found · %d services · elapsed %s · est. %s total</div>`,
+			runningRun.HostsFound, runningRun.ServicesFound, elapsed, estTotal,
 		))
 		body.WriteString(`</div>`)
 	}
@@ -446,9 +524,22 @@ func (s *server) discoveryPage(w http.ResponseWriter, r *http.Request) {
 			detail = emptyFallback(run.Logs, fmt.Sprintf("%d hosts · %d services", run.HostsFound, run.ServicesFound))
 		}
 		body.WriteString(`<div class="queue-card">`)
-		body.WriteString(fmt.Sprintf(`<div class="queue-line"><strong class="mono">%s</strong><span class="badge %s">%s</span></div>`,
+		body.WriteString(fmt.Sprintf(`<div class="queue-line"><strong class="mono">%s</strong><span class="badge %s">%s</span>`,
 			template.HTMLEscapeString(run.Target), tone, template.HTMLEscapeString(strings.ToUpper(run.Status)),
 		))
+		if run.Status == "queued" || run.Status == "running" {
+			body.WriteString(fmt.Sprintf(`<form method="post" action="/discovery/%s/cancel" style="margin-left:auto"><button type="submit" class="button ghost" style="padding:1px 7px;font-size:.75rem;line-height:1.4">✕</button></form>`,
+				template.HTMLEscapeString(run.ID),
+			))
+		}
+		body.WriteString(`</div>`)
+		if run.Status == "running" {
+			body.WriteString(fmt.Sprintf(`<div class="progress-bar" style="margin:.3rem 0"><div class="progress-fill" style="width:%d%%"></div></div>`, run.ProgressPercent))
+			body.WriteString(fmt.Sprintf(`<p class="muted" style="font-size:.78rem;margin:.1rem 0 0">elapsed %s · est. %s total</p>`,
+				elapsedSince(run.StartedAt),
+				profileEstimatedDuration(run.Profile),
+			))
+		}
 		body.WriteString(fmt.Sprintf(`<p class="muted" style="font-size:.78rem;margin:.2rem 0 0">%s · %s</p>`,
 			template.HTMLEscapeString(profileLabel(run.Profile)),
 			template.HTMLEscapeString(timeLabel(nonZero(run.CompletedAt, run.CreatedAt))),
@@ -485,6 +576,15 @@ func (s *server) startDiscovery(w http.ResponseWriter, r *http.Request) {
 		_, _ = s.deps.Discovery.ExecuteQueued(context.Background(), &runCopy)
 	}()
 
+	http.Redirect(w, r, "/discovery", http.StatusSeeOther)
+}
+
+func (s *server) cancelDiscovery(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := s.deps.Discovery.Cancel(r.Context(), id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	http.Redirect(w, r, "/discovery", http.StatusSeeOther)
 }
 
@@ -908,4 +1008,34 @@ func profileLabel(value string) string {
 		}
 	}
 	return value
+}
+
+func profileEstimatedDuration(profile string) string {
+	switch profile {
+	case "quick":
+		return "~30s"
+	case "normal":
+		return "~2 min"
+	case "slow-safe":
+		return "~5 min"
+	case "deep":
+		return "~15 min"
+	}
+	return "unknown"
+}
+
+func elapsedSince(t time.Time) string {
+	if t.IsZero() {
+		return "0s"
+	}
+	d := time.Since(t).Round(time.Second)
+	if d < time.Minute {
+		return fmt.Sprintf("%ds", int(d.Seconds()))
+	}
+	m := int(d.Minutes())
+	s := int(d.Seconds()) % 60
+	if s == 0 {
+		return fmt.Sprintf("%dm", m)
+	}
+	return fmt.Sprintf("%dm %ds", m, s)
 }

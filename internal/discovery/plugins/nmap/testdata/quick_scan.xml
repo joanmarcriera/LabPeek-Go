@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<nmaprun scanner="nmap" args="nmap -sn 192.168.1.0/24 -oX -" start="1714200000" version="7.95">
+  <host>
+    <status state="up" reason="arp-response" reason_ttl="0"/>
+    <address addr="192.168.1.10" addrtype="ipv4"/>
+    <address addr="00:11:22:33:44:55" addrtype="mac" vendor="Synology Inc."/>
+    <hostnames>
+      <hostname name="nas.local" type="PTR"/>
+    </hostnames>
+  </host>
+  <host>
+    <status state="up" reason="arp-response" reason_ttl="0"/>
+    <address addr="192.168.1.20" addrtype="ipv4"/>
+    <address addr="AA:BB:CC:DD:EE:FF" addrtype="mac"/>
+    <hostnames>
+      <hostname name="printer.local" type="PTR"/>
+    </hostnames>
+  </host>
+  <runstats>
+    <finished time="1714200010" timestr="Sat Apr 27 12:00:10 2024" summary="Nmap done"/>
+    <hosts up="2" down="0" total="2"/>
+  </runstats>
+</nmaprun>

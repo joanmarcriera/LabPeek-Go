@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<?xml-stylesheet href="file:///usr/bin/../share/nmap/nmap.xsl" type="text/xsl"?>
+<!-- Nmap 7.94 scan initiated Mon Apr 27 14:25:33 2026 as: nmap -sV -O -p- -&#45;max-retries 3 -oX /app/data/discovery/1777299933798650611.xml 192.168.1.0/24 -->
+<nmaprun scanner="nmap" args="nmap -sV -O -p- -&#45;max-retries 3 -oX /app/data/discovery/1777299933798650611.xml 192.168.1.0/24" start="1777299933" startstr="Mon Apr 27 14:25:33 2026" version="7.94" xmloutputversion="1.05">
+<scaninfo type="syn" protocol="tcp" numservices="65535" services="1-65535"/>
+<verbose level="0"/>
+<debugging level="0"/>
+<runstats><finished time="1777299933" timestr="Mon Apr 27 14:25:33 2026" summary="Nmap done at Mon Apr 27 14:25:33 2026; 0 IP addresses (0 hosts up) scanned in 0.09 seconds" elapsed="0.09" exit="error" errormsg="NSE: failed to initialize the script engine:&#xa;could not locate nse_main.lua&#xa;stack traceback:&#xa;&#x9;[C]: in ?&#xa;"/><hosts up="0" down="0" total="0"/>
+</runstats>
+</nmaprun>

@@ -17,6 +17,10 @@ type Host struct {
 	Vendor      string
 	Hostnames   []string
 	Ports       []Port
+	// UpReason is the nmap probe type that determined the host is up
+	// (e.g. "arp-response", "echo-reply", "syn-ack", "reset").
+	// Used downstream to filter TCP-RST false positives.
+	UpReason string
 }
 
 type Port struct {
@@ -32,7 +36,8 @@ type xmlNmapRun struct {
 }
 
 type xmlHostStatus struct {
-	State string `xml:"state,attr"`
+	State  string `xml:"state,attr"`
+	Reason string `xml:"reason,attr"`
 }
 
 type xmlHost struct {
@@ -100,6 +105,7 @@ func mapHost(raw xmlHost) (Host, error) {
 	host := Host{
 		Hostnames: make([]string, 0, len(raw.Hostnames)),
 		Ports:     make([]Port, 0, len(raw.Ports)),
+		UpReason:  strings.ToLower(raw.Status.Reason),
 	}
 
 	for _, address := range raw.Addresses {
